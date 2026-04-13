@@ -245,13 +245,6 @@ const ServicesScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Orange accent bar wipes across top area
-  const barWidth = interpolate(frame, [0, 20], [0, 100], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.out(Easing.cubic),
-  });
-
   // "Mowing." slides in
   const w1Spring = spring({
     frame: frame - 16,
@@ -299,19 +292,6 @@ const ServicesScene: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
-      {/* Orange accent bar */}
-      <div
-        style={{
-          position: "absolute",
-          top: "42%",
-          left: 0,
-          width: `${barWidth}%`,
-          height: 6,
-          background: ORANGE,
-          boxShadow: `0 0 20px ${ORANGE}50`,
-        }}
-      />
-
       <AbsoluteFill
         style={{
           display: "flex",
@@ -375,8 +355,7 @@ const ServicesScene: React.FC = () => {
               fontFamily: BOLD,
               fontWeight: 900,
               fontSize: 88,
-              color: ORANGE,
-              textShadow: `0 0 30px ${ORANGE}40`,
+              color: WHITE,
             }}
           >
             Curb Appeal.
