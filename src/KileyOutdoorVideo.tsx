@@ -227,8 +227,8 @@ const HeadlineScene: React.FC = () => {
               fontWeight: 900,
               fontSize: 120,
               letterSpacing: 4,
-              color: ORANGE,
-              textShadow: `0 0 40px ${ORANGE}60, 0 4px 16px rgba(0,0,0,0.2)`,
+              color: WHITE,
+              textShadow: "0 3px 20px rgba(0,0,0,0.15)",
             }}
           >
             STARTS NOW
@@ -686,8 +686,8 @@ const CTAScene: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  // Orange bottom bar grows in
-  const barHeight = interpolate(frame, [0, 18], [0, 120], {
+  // Orange bottom accent line grows in
+  const barWidth = interpolate(frame, [0, 18], [0, 100], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
@@ -695,15 +695,18 @@ const CTAScene: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: GREEN }}>
-      {/* Orange bar at bottom */}
+      {/* Orange accent line at bottom */}
       <div
         style={{
           position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: barHeight,
+          bottom: 80,
+          left: "50%",
+          width: `${barWidth}%`,
+          maxWidth: 600,
+          height: 5,
           background: ORANGE,
+          transform: "translateX(-50%)",
+          borderRadius: 3,
         }}
       />
 
@@ -729,11 +732,12 @@ const CTAScene: React.FC = () => {
         >
           <span
             style={{
-              fontFamily: REGULAR,
-              fontWeight: 400,
-              fontSize: 44,
+              fontFamily: BOLD,
+              fontWeight: 900,
+              fontSize: 94,
               color: WHITE,
-              opacity: 0.8,
+              letterSpacing: 2,
+              textShadow: "0 4px 24px rgba(0,0,0,0.2)",
             }}
           >
             Call
