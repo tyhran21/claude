@@ -101,7 +101,7 @@ const BrandIntro: React.FC = () => {
   });
 
   // Exit
-  const exitOpacity = interpolate(frame, [78, 88], [1, 0], {
+  const exitOpacity = interpolate(frame, [88, 98], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -245,7 +245,7 @@ const ServicesScene: React.FC = () => {
   const w3X = interpolate(w3Spring, [0, 1], [-60, 0]);
   const w3Opacity = interpolate(frame, [32, 40], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  const exitOpacity = interpolate(frame, [78, 88], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const exitOpacity = interpolate(frame, [88, 98], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
@@ -301,7 +301,7 @@ const LocationScene: React.FC = () => {
   const countyScale = interpolate(countySpring, [0, 1], [0.3, 1]);
   const countyOpacity = interpolate(frame, [20, 26], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  const exitOpacity = interpolate(frame, [78, 88], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const exitOpacity = interpolate(frame, [88, 98], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
@@ -336,95 +336,43 @@ const LocationScene: React.FC = () => {
   );
 };
 
-// ─── Date scene: Season Starts April 15th ───────────────────────────────────
+// ─── Final scene: Season Starts April 15th + CTA ───────────────────────────
 
-const DateScene: React.FC = () => {
+const FinalScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // "Season Starts" bouncy entrance
+  // "Season starts" bouncy entrance
   const startsSpring = spring({ frame: frame - 2, fps, config: { damping: 5, stiffness: 200, mass: 0.8 }, durationInFrames: 24 });
   const startsScale = interpolate(startsSpring, [0, 1], [0.3, 1]);
   const startsOpacity = interpolate(frame, [2, 8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   // "April 15th" big bouncy pop
-  const dateSpring = spring({ frame: frame - 12, fps, config: { damping: 4, stiffness: 230, mass: 0.9 }, durationInFrames: 28 });
+  const dateSpring = spring({ frame: frame - 10, fps, config: { damping: 4, stiffness: 230, mass: 0.9 }, durationInFrames: 28 });
   const dateScale = interpolate(dateSpring, [0, 1], [0.15, 1]);
-  const dateOpacity = interpolate(frame, [12, 18], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const dateOpacity = interpolate(frame, [10, 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  const exitOpacity = interpolate(frame, [78, 88], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // Dark card slides up
+  const cardSpring = spring({ frame: frame - 22, fps, config: { damping: 5, stiffness: 180, mass: 0.9 }, durationInFrames: 28 });
+  const cardScale = interpolate(cardSpring, [0, 1], [0.3, 1]);
+  const cardY = interpolate(cardSpring, [0, 1], [40, 0]);
+  const cardOpacity = interpolate(frame, [22, 28], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  return (
-    <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
-      <AbsoluteFill
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          paddingLeft: SAFE_X,
-          paddingRight: SAFE_X,
-          paddingTop: SAFE_TOP,
-          paddingBottom: SAFE_BOTTOM,
-        }}
-      >
-        <div style={{ opacity: startsOpacity, transform: `scale(${startsScale})`, textAlign: "center", marginBottom: 12 }}>
-          <span style={{ fontFamily: REGULAR, fontWeight: 400, fontSize: 52, color: WHITE, opacity: 0.85 }}>
-            Season Starts
-          </span>
-        </div>
-        <div style={{ opacity: dateOpacity, transform: `scale(${dateScale})`, textAlign: "center" }}>
-          <span style={{ fontFamily: BOLD, fontWeight: 900, fontSize: 130, lineHeight: 1, color: WHITE, textShadow: "0 0 40px rgba(255,255,255,0.2), 0 4px 20px rgba(0,0,0,0.2)" }}>
-            April 15<span style={{ fontSize: 80, verticalAlign: "super" }}>th</span>
-          </span>
-        </div>
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
-};
+  // Phone number pulse
+  const pulse1 = spring({ frame: frame - 50, fps, config: { damping: 6, stiffness: 300, mass: 0.6 }, durationInFrames: 12 });
+  const pulse1Scale = frame >= 50 ? interpolate(pulse1, [0, 0.5, 1], [0, 0.08, 0]) : 0;
+  const pulse2 = spring({ frame: frame - 62, fps, config: { damping: 6, stiffness: 300, mass: 0.6 }, durationInFrames: 12 });
+  const pulse2Scale = frame >= 62 ? interpolate(pulse2, [0, 0.5, 1], [0, 0.06, 0]) : 0;
+  const cardPulse = 1 + pulse1Scale + pulse2Scale;
 
-// ─── CTA scene ──────────────────────────────────────────────────────────────
-
-const CTAScene: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const callSpring = spring({ frame: frame - 2, fps, config: { damping: 5, stiffness: 210, mass: 0.8 }, durationInFrames: 24 });
-  const callScale = interpolate(callSpring, [0, 1], [0.2, 1]);
-  const callOpacity = interpolate(frame, [2, 8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  const phoneSpring = spring({ frame: frame - 8, fps, config: { damping: 4.5, stiffness: 240, mass: 0.9 }, durationInFrames: 26 });
-  const phoneScale = interpolate(phoneSpring, [0, 1], [0.15, 1]);
-  const phoneOpacity = interpolate(frame, [8, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  const pulse1 = spring({ frame: frame - 26, fps, config: { damping: 6, stiffness: 300, mass: 0.6 }, durationInFrames: 12 });
-  const pulse1Scale = frame >= 26 ? interpolate(pulse1, [0, 0.5, 1], [0, 0.12, 0]) : 0;
-  const pulse2 = spring({ frame: frame - 36, fps, config: { damping: 6, stiffness: 300, mass: 0.6 }, durationInFrames: 12 });
-  const pulse2Scale = frame >= 36 ? interpolate(pulse2, [0, 0.5, 1], [0, 0.08, 0]) : 0;
-  const totalPhoneScale = phoneScale * (1 + pulse1Scale + pulse2Scale);
-
-  const bookSpring = spring({ frame: frame - 20, fps, config: { damping: 5, stiffness: 200, mass: 0.8 }, durationInFrames: 24 });
+  // "Book your spot today" bouncy entrance
+  const bookSpring = spring({ frame: frame - 34, fps, config: { damping: 5, stiffness: 200, mass: 0.8 }, durationInFrames: 24 });
   const bookScale = interpolate(bookSpring, [0, 1], [0.4, 1]);
   const bookY = interpolate(bookSpring, [0, 1], [15, 0]);
-  const bookOpacity = interpolate(frame, [20, 26], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  const barWidth = interpolate(frame, [0, 18], [0, 100], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
+  const bookOpacity = interpolate(frame, [34, 40], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: GREEN }}>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 80,
-          left: "50%",
-          width: `${barWidth}%`,
-          maxWidth: 600,
-          height: 5,
-          background: ORANGE,
-          transform: "translateX(-50%)",
-          borderRadius: 3,
-        }}
-      />
       <AbsoluteFill
         style={{
           display: "flex",
@@ -437,15 +385,43 @@ const CTAScene: React.FC = () => {
           paddingBottom: SAFE_BOTTOM,
         }}
       >
-        <div style={{ opacity: callOpacity, transform: `scale(${callScale})`, marginBottom: 8 }}>
-          <span style={{ fontFamily: BOLD, fontWeight: 900, fontSize: 76, color: WHITE, letterSpacing: 2, textShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>Call</span>
+        {/* Season starts */}
+        <div style={{ opacity: startsOpacity, transform: `scale(${startsScale})`, textAlign: "center", marginBottom: 8 }}>
+          <span style={{ fontFamily: REGULAR, fontWeight: 400, fontSize: 52, color: WHITE }}>
+            Season starts
+          </span>
         </div>
-        <div style={{ opacity: phoneOpacity, transform: `scale(${totalPhoneScale})`, marginBottom: 32, paddingLeft: 20, paddingRight: 20 }}>
-          <span style={{ fontFamily: BOLD, fontWeight: 900, fontSize: 76, color: WHITE, letterSpacing: 2, textShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>248-747-LAWN</span>
+
+        {/* April 15th */}
+        <div style={{ opacity: dateOpacity, transform: `scale(${dateScale})`, textAlign: "center", marginBottom: 48 }}>
+          <span style={{ fontFamily: BOLD, fontWeight: 900, fontSize: 120, lineHeight: 1, color: ORANGE, textShadow: "0 0 40px rgba(245,130,31,0.3), 0 4px 20px rgba(0,0,0,0.2)" }}>
+            April 15<span style={{ fontSize: 72, verticalAlign: "super" }}>th</span>
+          </span>
         </div>
-        <div style={{ width: 80, height: 4, background: ORANGE, borderRadius: 2, marginBottom: 28, opacity: bookOpacity }} />
+
+        {/* Dark card with Call + phone number */}
+        <div style={{
+          opacity: cardOpacity,
+          transform: `scale(${cardPulse}) translateY(${cardY}px)`,
+          background: OFF_BLACK,
+          borderRadius: 24,
+          paddingTop: 36,
+          paddingBottom: 40,
+          paddingLeft: 48,
+          paddingRight: 48,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginBottom: 32,
+          boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
+        }}>
+          <span style={{ fontFamily: REGULAR, fontWeight: 400, fontSize: 40, color: WHITE, marginBottom: 8, opacity: 0.9 }}>Call</span>
+          <span style={{ fontFamily: BOLD, fontWeight: 900, fontSize: 72, color: WHITE, letterSpacing: 2 }}>248-747-LAWN</span>
+        </div>
+
+        {/* Book your spot today */}
         <div style={{ opacity: bookOpacity, transform: `scale(${bookScale}) translateY(${bookY}px)`, textAlign: "center" }}>
-          <span style={{ fontFamily: BOLD, fontWeight: 700, fontSize: 48, color: WHITE, letterSpacing: 1 }}>Book Your Spot Today</span>
+          <span style={{ fontFamily: BOLD, fontWeight: 700, fontSize: 48, color: WHITE, letterSpacing: 1 }}>Book your spot today</span>
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
@@ -455,58 +431,47 @@ const CTAScene: React.FC = () => {
 // ─── Main Composition ───────────────────────────────────────────────────────
 
 // Timeline (450 frames = 15s at 30fps):
-// 0-90:    Brand intro (3s)
-// 90-180:  Services - Mowing. Cleanup. Curb Appeal. (3s)
-// 180-270: Location - Serving Southern Oakland County (3s)
-// 270-360: Date - Season Starts April 15th (3s)
-// 360-450: CTA - Call 248-747-LAWN / Book Your Spot Today (3s)
+// 0-100:    Brand intro (3.3s)
+// 100-200:  Services - Mowing. Cleanup. Curb Appeal. (3.3s)
+// 200-300:  Location - Serving Southern Oakland County (3.3s)
+// 300-450:  Final - Season Starts April 15th + Call 248-747-LAWN (5s)
 
 export const KileyOutdoorVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: OFF_BLACK }}>
       {/* Scene 1: Brand intro */}
-      <Sequence from={0} durationInFrames={90}>
+      <Sequence from={0} durationInFrames={100}>
         <BrandIntro />
       </Sequence>
 
       {/* Flash: Intro → Services */}
-      <Sequence from={88} durationInFrames={5}>
+      <Sequence from={98} durationInFrames={5}>
         <FlashTransition />
       </Sequence>
 
       {/* Scene 2: Services */}
-      <Sequence from={90} durationInFrames={90}>
+      <Sequence from={100} durationInFrames={100}>
         <ServicesScene />
       </Sequence>
 
       {/* Flash: Services → Location */}
-      <Sequence from={178} durationInFrames={5}>
+      <Sequence from={198} durationInFrames={5}>
         <FlashTransition />
       </Sequence>
 
       {/* Scene 3: Location */}
-      <Sequence from={180} durationInFrames={90}>
+      <Sequence from={200} durationInFrames={100}>
         <LocationScene />
       </Sequence>
 
-      {/* Flash: Location → Date */}
-      <Sequence from={268} durationInFrames={5}>
+      {/* Flash: Location → Final */}
+      <Sequence from={298} durationInFrames={5}>
         <FlashTransition />
       </Sequence>
 
-      {/* Scene 4: Season Starts April 15th */}
-      <Sequence from={270} durationInFrames={90}>
-        <DateScene />
-      </Sequence>
-
-      {/* Flash: Date → CTA */}
-      <Sequence from={358} durationInFrames={5}>
-        <FlashTransition />
-      </Sequence>
-
-      {/* Scene 5: CTA */}
-      <Sequence from={360} durationInFrames={90}>
-        <CTAScene />
+      {/* Scene 4: Season Starts April 15th + CTA */}
+      <Sequence from={300} durationInFrames={150}>
+        <FinalScene />
       </Sequence>
     </AbsoluteFill>
   );
