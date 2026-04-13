@@ -24,34 +24,46 @@ const WHITE = "#FFFFFF";
 const BOLD = "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif";
 const REGULAR = "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif";
 
+// ─── White flash transition ─────────────────────────────────────────────────
+
+const FlashTransition: React.FC = () => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 2, 4], [0, 0.85, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return <AbsoluteFill style={{ background: WHITE, opacity }} />;
+};
+
 // ─── Scene 1: Brand Intro (0-2s / 0-60 frames) ─────────────────────────────
 
 const BrandIntro: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // "KILEY" fades in at top center
-  const kileyOpacity = interpolate(frame, [0, 18], [0, 1], {
+  // "KILEY" bouncy pop — low damping for overshoot
+  const kileySpring = spring({
+    frame,
+    fps,
+    config: { damping: 5, stiffness: 180, mass: 0.9 },
+    durationInFrames: 28,
+  });
+  const kileyScale = interpolate(kileySpring, [0, 1], [0.2, 1]);
+  const kileyOpacity = interpolate(frame, [0, 8], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const kileyScale = spring({
-    frame,
-    fps,
-    config: { damping: 14, stiffness: 160 },
-    durationInFrames: 22,
-  });
-  const kileyS = interpolate(kileyScale, [0, 1], [0.7, 1]);
 
-  // "Outdoor Services" slides up beneath
+  // "Outdoor Services" bouncy scale pop + slide up
   const subSpring = spring({
     frame: frame - 14,
     fps,
-    config: { damping: 12, stiffness: 170 },
-    durationInFrames: 22,
+    config: { damping: 5, stiffness: 200, mass: 0.8 },
+    durationInFrames: 26,
   });
-  const subY = interpolate(subSpring, [0, 1], [40, 0]);
-  const subOpacity = interpolate(frame, [14, 28], [0, 1], {
+  const subScale = interpolate(subSpring, [0, 1], [0.3, 1]);
+  const subY = interpolate(subSpring, [0, 1], [30, 0]);
+  const subOpacity = interpolate(frame, [14, 22], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -87,7 +99,7 @@ const BrandIntro: React.FC = () => {
         <div
           style={{
             opacity: kileyOpacity,
-            transform: `scale(${kileyS})`,
+            transform: `scale(${kileyScale})`,
             marginBottom: 12,
           }}
         >
@@ -109,7 +121,7 @@ const BrandIntro: React.FC = () => {
         <div
           style={{
             opacity: subOpacity,
-            transform: `translateY(${subY}px)`,
+            transform: `scale(${subScale}) translateY(${subY}px)`,
             marginBottom: 24,
           }}
         >
@@ -147,28 +159,28 @@ const HeadlineScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // "Lawn Season" scale pops in
+  // "Lawn Season" bouncy scale pop
   const line1Spring = spring({
     frame: frame - 4,
     fps,
-    config: { damping: 9, stiffness: 200 },
-    durationInFrames: 20,
+    config: { damping: 4.5, stiffness: 220, mass: 0.8 },
+    durationInFrames: 26,
   });
-  const line1Scale = interpolate(line1Spring, [0, 1], [0.3, 1]);
-  const line1Opacity = interpolate(frame, [4, 16], [0, 1], {
+  const line1Scale = interpolate(line1Spring, [0, 1], [0.2, 1]);
+  const line1Opacity = interpolate(frame, [4, 12], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // "STARTS NOW" slams in bigger
+  // "STARTS NOW" bigger bouncy slam
   const line2Spring = spring({
     frame: frame - 18,
     fps,
-    config: { damping: 7, stiffness: 240 },
-    durationInFrames: 22,
+    config: { damping: 4, stiffness: 260, mass: 1 },
+    durationInFrames: 28,
   });
-  const line2Scale = interpolate(line2Spring, [0, 1], [0.2, 1]);
-  const line2Opacity = interpolate(frame, [18, 28], [0, 1], {
+  const line2Scale = interpolate(line2Spring, [0, 1], [0.15, 1]);
+  const line2Opacity = interpolate(frame, [18, 24], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -239,47 +251,50 @@ const HeadlineScene: React.FC = () => {
   );
 };
 
-// ─── Scene 3: Services bar wipe (5-8s / 150-240 frames) ────────────────────
+// ─── Scene 3: Services (5-8s / 150-240 frames) ─────────────────────────────
 
 const ServicesScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // "Mowing." slides in
+  // "Mowing." bouncy slide + scale
   const w1Spring = spring({
-    frame: frame - 16,
+    frame: frame - 10,
     fps,
-    config: { damping: 10, stiffness: 190 },
-    durationInFrames: 18,
+    config: { damping: 5, stiffness: 200, mass: 0.8 },
+    durationInFrames: 24,
   });
-  const w1X = interpolate(w1Spring, [0, 1], [-80, 0]);
-  const w1Opacity = interpolate(frame, [16, 26], [0, 1], {
+  const w1Scale = interpolate(w1Spring, [0, 1], [0.3, 1]);
+  const w1X = interpolate(w1Spring, [0, 1], [-60, 0]);
+  const w1Opacity = interpolate(frame, [10, 18], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // "Cleanup." slides in
+  // "Cleanup." bouncy slide + scale
   const w2Spring = spring({
-    frame: frame - 26,
+    frame: frame - 22,
     fps,
-    config: { damping: 10, stiffness: 190 },
-    durationInFrames: 18,
+    config: { damping: 5, stiffness: 200, mass: 0.8 },
+    durationInFrames: 24,
   });
-  const w2X = interpolate(w2Spring, [0, 1], [-80, 0]);
-  const w2Opacity = interpolate(frame, [26, 36], [0, 1], {
+  const w2Scale = interpolate(w2Spring, [0, 1], [0.3, 1]);
+  const w2X = interpolate(w2Spring, [0, 1], [-60, 0]);
+  const w2Opacity = interpolate(frame, [22, 30], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // "Curb Appeal." slides in
+  // "Curb Appeal." bouncy slide + scale
   const w3Spring = spring({
-    frame: frame - 36,
+    frame: frame - 34,
     fps,
-    config: { damping: 10, stiffness: 190 },
-    durationInFrames: 18,
+    config: { damping: 5, stiffness: 200, mass: 0.8 },
+    durationInFrames: 24,
   });
-  const w3X = interpolate(w3Spring, [0, 1], [-80, 0]);
-  const w3Opacity = interpolate(frame, [36, 46], [0, 1], {
+  const w3Scale = interpolate(w3Spring, [0, 1], [0.3, 1]);
+  const w3X = interpolate(w3Spring, [0, 1], [-60, 0]);
+  const w3Opacity = interpolate(frame, [34, 42], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -309,7 +324,7 @@ const ServicesScene: React.FC = () => {
         <div
           style={{
             opacity: w1Opacity,
-            transform: `translateX(${w1X}px)`,
+            transform: `translateX(${w1X}px) scale(${w1Scale})`,
           }}
         >
           <span
@@ -328,7 +343,7 @@ const ServicesScene: React.FC = () => {
         <div
           style={{
             opacity: w2Opacity,
-            transform: `translateX(${w2X}px)`,
+            transform: `translateX(${w2X}px) scale(${w2Scale})`,
           }}
         >
           <span
@@ -347,7 +362,7 @@ const ServicesScene: React.FC = () => {
         <div
           style={{
             opacity: w3Opacity,
-            transform: `translateX(${w3X}px)`,
+            transform: `translateX(${w3X}px) scale(${w3Scale})`,
           }}
         >
           <span
@@ -372,29 +387,48 @@ const LocationScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Pin icon drops in
+  // Pin drops from way above with heavy bounce
   const pinSpring = spring({
     frame: frame - 2,
     fps,
-    config: { damping: 8, stiffness: 220 },
-    durationInFrames: 20,
+    config: { damping: 3.5, stiffness: 120, mass: 1.2 },
+    durationInFrames: 40,
   });
-  const pinY = interpolate(pinSpring, [0, 1], [-60, 0]);
-  const pinScale = interpolate(pinSpring, [0, 1], [0.4, 1]);
-  const pinOpacity = interpolate(frame, [2, 14], [0, 1], {
+  const pinY = interpolate(pinSpring, [0, 1], [-500, 0]);
+  const pinOpacity = interpolate(frame, [2, 6], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  // Squash/stretch on bounce: when moving down, stretch vertically; at rest, normal
+  const pinVelocity = frame > 2 ? (pinY - interpolate(
+    spring({ frame: frame - 3, fps, config: { damping: 3.5, stiffness: 120, mass: 1.2 }, durationInFrames: 40 }),
+    [0, 1], [-500, 0]
+  )) : 0;
+  const squashX = 1 + Math.min(Math.abs(pinVelocity) * 0.003, 0.25);
+  const squashY = 1 / squashX;
+
+  // "Serving" bouncy scale pop
+  const servingSpring = spring({
+    frame: frame - 14,
+    fps,
+    config: { damping: 5, stiffness: 200, mass: 0.8 },
+    durationInFrames: 24,
+  });
+  const servingScale = interpolate(servingSpring, [0, 1], [0.3, 1]);
+  const servingOpacity = interpolate(frame, [14, 20], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // "Serving" + "Southern Oakland County" bounces in
-  const textSpring = spring({
-    frame: frame - 10,
+  // "Southern Oakland County" bouncy scale pop
+  const countySpring = spring({
+    frame: frame - 20,
     fps,
-    config: { damping: 9, stiffness: 200 },
-    durationInFrames: 22,
+    config: { damping: 4.5, stiffness: 210, mass: 0.9 },
+    durationInFrames: 26,
   });
-  const textScale = interpolate(textSpring, [0, 1], [0.4, 1]);
-  const textOpacity = interpolate(frame, [10, 22], [0, 1], {
+  const countyScale = interpolate(countySpring, [0, 1], [0.3, 1]);
+  const countyOpacity = interpolate(frame, [20, 26], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -419,21 +453,15 @@ const LocationScene: React.FC = () => {
           paddingBottom: SAFE_BOTTOM,
         }}
       >
-        {/* Location pin */}
+        {/* Location pin — drops + bounces */}
         <div
           style={{
             opacity: pinOpacity,
-            transform: `translateY(${pinY}px) scale(${pinScale})`,
+            transform: `translateY(${pinY}px) scaleX(${squashX}) scaleY(${squashY})`,
             marginBottom: 28,
           }}
         >
-          {/* SVG pin icon */}
-          <svg
-            width="72"
-            height="96"
-            viewBox="0 0 24 32"
-            fill="none"
-          >
+          <svg width="72" height="96" viewBox="0 0 24 32" fill="none">
             <path
               d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20C24 5.373 18.627 0 12 0z"
               fill={ORANGE}
@@ -445,8 +473,8 @@ const LocationScene: React.FC = () => {
         {/* Serving */}
         <div
           style={{
-            opacity: textOpacity,
-            transform: `scale(${textScale})`,
+            opacity: servingOpacity,
+            transform: `scale(${servingScale})`,
             textAlign: "center",
             marginBottom: 4,
           }}
@@ -467,8 +495,8 @@ const LocationScene: React.FC = () => {
         {/* Southern Oakland County */}
         <div
           style={{
-            opacity: textOpacity,
-            transform: `scale(${textScale})`,
+            opacity: countyOpacity,
+            transform: `scale(${countyScale})`,
             textAlign: "center",
             marginBottom: 16,
           }}
@@ -488,8 +516,6 @@ const LocationScene: React.FC = () => {
             Oakland County
           </span>
         </div>
-
-
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -501,31 +527,29 @@ const DateScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // "April 15th" scale pop
+  // "April 15th" bouncy scale pop
   const dateSpring = spring({
     frame: frame - 2,
     fps,
-    config: { damping: 8, stiffness: 210 },
-    durationInFrames: 22,
+    config: { damping: 4, stiffness: 230, mass: 0.9 },
+    durationInFrames: 28,
   });
-  const dateScale = interpolate(dateSpring, [0, 1], [0.25, 1]);
-  const dateOpacity = interpolate(frame, [2, 14], [0, 1], {
+  const dateScale = interpolate(dateSpring, [0, 1], [0.15, 1]);
+  const dateOpacity = interpolate(frame, [2, 8], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Subtle pulse on the date
-  const datePulse =
-    frame > 20
-      ? 1 + interpolate(Math.sin((frame - 20) * 0.18), [-1, 1], [0, 0.025])
-      : 1;
-
-  // "We're already booking up" fades in
-  const subOpacity = interpolate(frame, [22, 36], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
+  // "We're already booking up" bouncy pop
+  const subSpring = spring({
+    frame: frame - 22,
+    fps,
+    config: { damping: 5, stiffness: 200, mass: 0.8 },
+    durationInFrames: 24,
   });
-  const subY = interpolate(frame, [22, 36], [20, 0], {
+  const subScale = interpolate(subSpring, [0, 1], [0.4, 1]);
+  const subY = interpolate(subSpring, [0, 1], [15, 0]);
+  const subOpacity = interpolate(frame, [22, 28], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -554,7 +578,7 @@ const DateScene: React.FC = () => {
         <div
           style={{
             opacity: dateOpacity,
-            transform: `scale(${dateScale * datePulse})`,
+            transform: `scale(${dateScale})`,
             textAlign: "center",
             marginBottom: 28,
           }}
@@ -566,7 +590,7 @@ const DateScene: React.FC = () => {
               fontSize: 130,
               lineHeight: 1,
               color: WHITE,
-              textShadow: `0 0 40px rgba(255,255,255,0.2), 0 4px 20px rgba(0,0,0,0.2)`,
+              textShadow: "0 0 40px rgba(255,255,255,0.2), 0 4px 20px rgba(0,0,0,0.2)",
             }}
           >
             April 15
@@ -591,7 +615,7 @@ const DateScene: React.FC = () => {
         <div
           style={{
             opacity: subOpacity,
-            transform: `translateY(${subY}px)`,
+            transform: `scale(${subScale}) translateY(${subY}px)`,
             textAlign: "center",
           }}
         >
@@ -618,41 +642,61 @@ const CTAScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // "Call" label fades in
-  const callOpacity = interpolate(frame, [0, 12], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const callY = interpolate(frame, [0, 12], [-20, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Phone number pops in
-  const phoneSpring = spring({
-    frame: frame - 6,
+  // "Call" bouncy pop
+  const callSpring = spring({
+    frame: frame - 2,
     fps,
-    config: { damping: 7, stiffness: 230 },
-    durationInFrames: 22,
+    config: { damping: 5, stiffness: 210, mass: 0.8 },
+    durationInFrames: 24,
   });
-  const phoneScale = interpolate(phoneSpring, [0, 1], [0.3, 1]);
-  const phoneOpacity = interpolate(frame, [6, 16], [0, 1], {
+  const callScale = interpolate(callSpring, [0, 1], [0.2, 1]);
+  const callOpacity = interpolate(frame, [2, 8], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Phone number pulse
-  const phonePulse =
-    frame > 24
-      ? 1 + interpolate(Math.sin((frame - 24) * 0.22), [-1, 1], [0, 0.025])
-      : 1;
-
-  // Website slides up
-  const webOpacity = interpolate(frame, [22, 34], [0, 1], {
+  // Phone number bouncy pop
+  const phoneSpring = spring({
+    frame: frame - 8,
+    fps,
+    config: { damping: 4.5, stiffness: 240, mass: 0.9 },
+    durationInFrames: 26,
+  });
+  const phoneScale = interpolate(phoneSpring, [0, 1], [0.15, 1]);
+  const phoneOpacity = interpolate(frame, [8, 14], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const webY = interpolate(frame, [22, 34], [20, 0], {
+
+  // Two distinct pulses after phone appears (at frame 28 and 38)
+  const pulse1 = spring({
+    frame: frame - 28,
+    fps,
+    config: { damping: 6, stiffness: 300, mass: 0.6 },
+    durationInFrames: 12,
+  });
+  const pulse1Scale = frame >= 28 ? 1 + interpolate(pulse1, [0, 0.5, 1], [0, 0.12, 0]) : 0;
+
+  const pulse2 = spring({
+    frame: frame - 38,
+    fps,
+    config: { damping: 6, stiffness: 300, mass: 0.6 },
+    durationInFrames: 12,
+  });
+  const pulse2Scale = frame >= 38 ? interpolate(pulse2, [0, 0.5, 1], [0, 0.08, 0]) : 0;
+
+  const totalPhoneScale = phoneScale * (1 + pulse1Scale + pulse2Scale);
+
+  // Website bouncy pop
+  const webSpring = spring({
+    frame: frame - 22,
+    fps,
+    config: { damping: 5, stiffness: 200, mass: 0.8 },
+    durationInFrames: 24,
+  });
+  const webScale = interpolate(webSpring, [0, 1], [0.4, 1]);
+  const webY = interpolate(webSpring, [0, 1], [15, 0]);
+  const webOpacity = interpolate(frame, [22, 28], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -697,7 +741,7 @@ const CTAScene: React.FC = () => {
         <div
           style={{
             opacity: callOpacity,
-            transform: `translateY(${callY}px)`,
+            transform: `scale(${callScale})`,
             marginBottom: 8,
           }}
         >
@@ -715,11 +759,11 @@ const CTAScene: React.FC = () => {
           </span>
         </div>
 
-        {/* 248-747-LAWN */}
+        {/* 248-747-LAWN — double pulse */}
         <div
           style={{
             opacity: phoneOpacity,
-            transform: `scale(${phoneScale * phonePulse})`,
+            transform: `scale(${totalPhoneScale})`,
             marginBottom: 32,
           }}
         >
@@ -753,7 +797,7 @@ const CTAScene: React.FC = () => {
         <div
           style={{
             opacity: webOpacity,
-            transform: `translateY(${webY}px)`,
+            transform: `scale(${webScale}) translateY(${webY}px)`,
           }}
         >
           <span
@@ -784,9 +828,19 @@ export const KileyOutdoorVideo: React.FC = () => {
         <BrandIntro />
       </Sequence>
 
+      {/* Flash: Intro → Headline */}
+      <Sequence from={58} durationInFrames={5}>
+        <FlashTransition />
+      </Sequence>
+
       {/* Scene 2: Lawn Season STARTS NOW (2-5s) */}
       <Sequence from={60} durationInFrames={90}>
         <HeadlineScene />
+      </Sequence>
+
+      {/* Flash: Headline → Services */}
+      <Sequence from={148} durationInFrames={5}>
+        <FlashTransition />
       </Sequence>
 
       {/* Scene 3: Mowing. Cleanup. Curb Appeal. (5-8s) */}
@@ -794,14 +848,29 @@ export const KileyOutdoorVideo: React.FC = () => {
         <ServicesScene />
       </Sequence>
 
+      {/* Flash: Services → Location */}
+      <Sequence from={238} durationInFrames={5}>
+        <FlashTransition />
+      </Sequence>
+
       {/* Scene 4: Serving Southern Oakland County (8-11s) */}
       <Sequence from={240} durationInFrames={90}>
         <LocationScene />
       </Sequence>
 
+      {/* Flash: Location → Date */}
+      <Sequence from={328} durationInFrames={5}>
+        <FlashTransition />
+      </Sequence>
+
       {/* Scene 5: April 15th date callout (11-13s) */}
       <Sequence from={330} durationInFrames={60}>
         <DateScene />
+      </Sequence>
+
+      {/* Flash: Date → CTA */}
+      <Sequence from={388} durationInFrames={5}>
+        <FlashTransition />
       </Sequence>
 
       {/* Scene 6: CTA (13-15s) */}
