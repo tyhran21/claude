@@ -387,7 +387,7 @@ const ServicesScene: React.FC = () => {
   );
 };
 
-// ─── Scene 4: Serving Oakland County (8-11s / 240-330 frames) ───────────────
+// ─── Scene 4: Serving Southern Oakland County (8-11s / 240-330 frames) ──────
 
 const LocationScene: React.FC = () => {
   const frame = useCurrentFrame();
@@ -407,7 +407,7 @@ const LocationScene: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  // "Serving" + "Oakland County" bounces in
+  // "Serving" + "Southern Oakland County" bounces in
   const textSpring = spring({
     frame: frame - 10,
     fps,
@@ -495,7 +495,7 @@ const LocationScene: React.FC = () => {
           </span>
         </div>
 
-        {/* Oakland County */}
+        {/* Southern Oakland County */}
         <div
           style={{
             opacity: textOpacity,
@@ -508,11 +508,14 @@ const LocationScene: React.FC = () => {
             style={{
               fontFamily: BOLD,
               fontWeight: 900,
-              fontSize: 86,
+              fontSize: 74,
+              lineHeight: 1.15,
               color: WHITE,
               textShadow: "0 3px 20px rgba(0,0,0,0.15)",
             }}
           >
+            Southern
+            <br />
             Oakland County
           </span>
         </div>
@@ -837,7 +840,7 @@ export const KileyOutdoorVideo: React.FC = () => {
         <ServicesScene />
       </Sequence>
 
-      {/* Scene 4: Serving Oakland County (8-11s) */}
+      {/* Scene 4: Serving Southern Oakland County (8-11s) */}
       <Sequence from={240} durationInFrames={90}>
         <LocationScene />
       </Sequence>
