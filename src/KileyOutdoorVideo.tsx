@@ -399,17 +399,24 @@ const FinalScene: React.FC = () => {
           </span>
         </div>
 
-        {/* Call + phone number */}
+        {/* Call + phone number in green box */}
         <div style={{
           opacity: cardOpacity,
           transform: `scale(${cardPulse}) translateY(${cardY}px)`,
-          marginBottom: 32,
+          background: "#2D6B28",
+          border: "3px solid #4CAF50",
+          borderRadius: 24,
+          paddingTop: 32,
+          paddingBottom: 36,
+          paddingLeft: 48,
+          paddingRight: 48,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          marginBottom: 32,
         }}>
           <span style={{ fontFamily: REGULAR, fontWeight: 400, fontSize: 40, color: WHITE, marginBottom: 8 }}>Call</span>
-          <span style={{ fontFamily: BOLD, fontWeight: 900, fontSize: 72, color: WHITE, letterSpacing: 2, textShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>248-747-LAWN</span>
+          <span style={{ fontFamily: BOLD, fontWeight: 900, fontSize: 72, color: WHITE, letterSpacing: 2 }}>248-747-LAWN</span>
         </div>
 
         {/* Book your spot today */}
