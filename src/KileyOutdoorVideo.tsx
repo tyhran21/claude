@@ -399,16 +399,6 @@ const LocationScene: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  // "& Southeast Michigan" fades in
-  const subOpacity = interpolate(frame, [30, 44], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const subY = interpolate(frame, [30, 44], [15, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
   // Exit
   const exitOpacity = interpolate(frame, [80, 90], [1, 0], {
     extrapolateLeft: "clamp",
@@ -499,26 +489,7 @@ const LocationScene: React.FC = () => {
           </span>
         </div>
 
-        {/* & Southeast Michigan */}
-        <div
-          style={{
-            opacity: subOpacity,
-            transform: `translateY(${subY}px)`,
-            textAlign: "center",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: REGULAR,
-              fontWeight: 400,
-              fontSize: 38,
-              color: WHITE,
-              opacity: 0.75,
-            }}
-          >
-            & Southeast Michigan
-          </span>
-        </div>
+
       </AbsoluteFill>
     </AbsoluteFill>
   );
