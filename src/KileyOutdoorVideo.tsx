@@ -749,7 +749,7 @@ const CTAScene: React.FC = () => {
             style={{
               fontFamily: BOLD,
               fontWeight: 900,
-              fontSize: 94,
+              fontSize: 76,
               color: WHITE,
               letterSpacing: 2,
               textShadow: "0 4px 24px rgba(0,0,0,0.2)",
@@ -765,13 +765,15 @@ const CTAScene: React.FC = () => {
             opacity: phoneOpacity,
             transform: `scale(${totalPhoneScale})`,
             marginBottom: 32,
+            paddingLeft: 20,
+            paddingRight: 20,
           }}
         >
           <span
             style={{
               fontFamily: BOLD,
               fontWeight: 900,
-              fontSize: 94,
+              fontSize: 76,
               color: WHITE,
               letterSpacing: 2,
               textShadow: "0 4px 24px rgba(0,0,0,0.2)",
