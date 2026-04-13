@@ -1,11 +1,9 @@
 import React from "react";
 import {
   AbsoluteFill,
-  Audio,
   Sequence,
   interpolate,
   spring,
-  staticFile,
   useCurrentFrame,
   useVideoConfig,
   Easing,
@@ -13,142 +11,66 @@ import {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const W = 1080;
-const H = 1920;
 const SAFE_X = 64;
 const SAFE_TOP = 260;
 const SAFE_BOTTOM = 380;
 
 // Kiley Outdoor Services palette
 const GREEN = "#3A7D34";
-const GREEN_DARK = "#2D6229";
-const GREEN_BRIGHT = "#4CAF50";
-const GREEN_LIGHT = "#66BB6A";
 const ORANGE = "#F5821F";
 const WHITE = "#FFFFFF";
-const BROWN = "#8B7355";
-const BROWN_LIGHT = "#A08B6E";
-const BROWN_DARK = "#6B5740";
-const OFF_BLACK = "#1C1C1C";
 
-const FONT = "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif";
+// Fonts — Liberation Sans is metrically equivalent to Roboto on this system
+const BOLD = "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif";
+const REGULAR = "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif";
 
-// ─── Grass texture helpers ──────────────────────────────────────────────────
+// ─── Scene 1: Brand Intro (0-2s / 0-60 frames) ─────────────────────────────
 
-const deadGrassPatterns = [
-  "linear-gradient(165deg, #8B7355 25%, #7A6548 25%, #7A6548 50%, #8B7355 50%, #8B7355 75%, #7A6548 75%)",
-  "linear-gradient(45deg, rgba(107,87,64,0.5) 25%, transparent 25%, transparent 75%, rgba(107,87,64,0.5) 75%)",
-].join(",");
-
-const lushGrassPatterns = [
-  "linear-gradient(165deg, #4CAF50 25%, #43A047 25%, #43A047 50%, #4CAF50 50%, #4CAF50 75%, #43A047 75%)",
-  "linear-gradient(45deg, rgba(56,142,60,0.5) 25%, transparent 25%, transparent 75%, rgba(56,142,60,0.5) 75%)",
-].join(",");
-
-// ─── Floating grass blade particles ─────────────────────────────────────────
-
-const GRASS_PARTICLES = Array.from({ length: 20 }, (_, i) => ({
-  x: ((i * 137.508) % 1) * W,
-  y: 400 + ((i * 97.317) % 1) * 1100,
-  size: 2 + (i % 3) * 1.5,
-  speed: 0.08 + (i % 5) * 0.04,
-  opacity: 0.15 + (i % 4) * 0.08,
-}));
-
-// ─── Scene 1: Brand Intro (0-2s, 60 frames) ────────────────────────────────
-
-const IntroScene: React.FC = () => {
+const BrandIntro: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Background glow pulse
-  const glowAlpha = interpolate(Math.sin(frame * 0.08), [-1, 1], [0.15, 0.35]);
-
-  // "KILEY" logo text - springs in from scale 0
-  const logoSpring = spring({
+  // "KILEY" fades in at top center
+  const kileyOpacity = interpolate(frame, [0, 18], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const kileyScale = spring({
     frame,
     fps,
-    config: { damping: 10, stiffness: 180, mass: 1 },
+    config: { damping: 14, stiffness: 160 },
     durationInFrames: 22,
   });
-  const logoScale = interpolate(logoSpring, [0, 1], [0.3, 1]);
-  const logoOpacity = interpolate(frame, [0, 10], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const kileyS = interpolate(kileyScale, [0, 1], [0.7, 1]);
 
-  // "OUTDOOR SERVICES" subtitle
+  // "Outdoor Services" slides up beneath
   const subSpring = spring({
-    frame: frame - 8,
+    frame: frame - 14,
     fps,
-    config: { damping: 14, stiffness: 160 },
-    durationInFrames: 20,
+    config: { damping: 12, stiffness: 170 },
+    durationInFrames: 22,
   });
-  const subY = interpolate(subSpring, [0, 1], [25, 0]);
-  const subOpacity = interpolate(frame, [8, 20], [0, 1], {
+  const subY = interpolate(subSpring, [0, 1], [40, 0]);
+  const subOpacity = interpolate(frame, [14, 28], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Divider line swoosh
-  const lineWidth = interpolate(frame, [18, 34], [0, 100], {
+  // Subtle accent line
+  const lineWidth = interpolate(frame, [26, 42], [0, 100], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
   });
 
-  // "Lawn Season is Here" text
-  const headSpring = spring({
-    frame: frame - 24,
-    fps,
-    config: { damping: 12, stiffness: 170 },
-    durationInFrames: 22,
-  });
-  const headScale = interpolate(headSpring, [0, 1], [0.6, 1]);
-  const headOpacity = interpolate(frame, [24, 36], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Exit fade for the whole scene
+  // Exit
   const exitOpacity = interpolate(frame, [50, 60], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   return (
-    <AbsoluteFill style={{ opacity: exitOpacity }}>
-      {/* Solid green background */}
-      <AbsoluteFill style={{ background: GREEN }} />
-
-      {/* Radial glow */}
-      <AbsoluteFill
-        style={{
-          background: `radial-gradient(ellipse 80% 50% at 50% 45%, rgba(76,175,80,${glowAlpha}) 0%, transparent 70%)`,
-        }}
-      />
-
-      {/* Floating particles */}
-      {GRASS_PARTICLES.slice(0, 10).map((p, i) => {
-        const yOff = (frame * p.speed * 8) % 40;
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: p.x,
-              top: p.y - yOff,
-              width: p.size,
-              height: p.size * 3,
-              borderRadius: "50%",
-              background: WHITE,
-              opacity: p.opacity * logoOpacity,
-            }}
-          />
-        );
-      })}
-
-      {/* Content */}
+    <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
       <AbsoluteFill
         style={{
           display: "flex",
@@ -161,94 +83,155 @@ const IntroScene: React.FC = () => {
           paddingBottom: SAFE_BOTTOM,
         }}
       >
-        {/* KILEY logo text */}
+        {/* KILEY wordmark */}
         <div
           style={{
-            opacity: logoOpacity,
-            transform: `scale(${logoScale})`,
-            marginBottom: 8,
+            opacity: kileyOpacity,
+            transform: `scale(${kileyS})`,
+            marginBottom: 12,
           }}
         >
           <span
             style={{
-              fontFamily: FONT,
+              fontFamily: BOLD,
               fontWeight: 900,
-              fontSize: 120,
-              letterSpacing: 10,
+              fontSize: 130,
+              letterSpacing: 12,
               color: WHITE,
-              textShadow: "0 4px 30px rgba(0,0,0,0.3)",
+              textShadow: "0 4px 30px rgba(0,0,0,0.2)",
             }}
           >
             KILEY
           </span>
         </div>
 
-        {/* OUTDOOR SERVICES */}
+        {/* Outdoor Services */}
         <div
           style={{
             opacity: subOpacity,
             transform: `translateY(${subY}px)`,
-            marginBottom: 28,
+            marginBottom: 24,
           }}
         >
           <span
             style={{
-              fontFamily: FONT,
+              fontFamily: BOLD,
               fontWeight: 700,
-              fontSize: 44,
-              letterSpacing: 8,
-              color: ORANGE,
-              textShadow: "0 2px 12px rgba(0,0,0,0.2)",
+              fontSize: 48,
+              letterSpacing: 6,
+              color: WHITE,
             }}
           >
-            OUTDOOR SERVICES
+            Outdoor Services
           </span>
         </div>
 
-        {/* Accent line */}
+        {/* Accent underline */}
         <div
           style={{
             width: `${lineWidth}%`,
-            maxWidth: 500,
+            maxWidth: 320,
             height: 5,
-            background: `linear-gradient(90deg, transparent, ${WHITE}, transparent)`,
+            background: ORANGE,
             borderRadius: 3,
-            marginBottom: 44,
           }}
         />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
 
-        {/* Lawn Season is Here */}
+// ─── Scene 2: Lawn Season STARTS NOW (2-5s / 60-150 frames) ────────────────
+
+const HeadlineScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  // "Lawn Season" scale pops in
+  const line1Spring = spring({
+    frame: frame - 4,
+    fps,
+    config: { damping: 9, stiffness: 200 },
+    durationInFrames: 20,
+  });
+  const line1Scale = interpolate(line1Spring, [0, 1], [0.3, 1]);
+  const line1Opacity = interpolate(frame, [4, 16], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // "STARTS NOW" slams in bigger
+  const line2Spring = spring({
+    frame: frame - 18,
+    fps,
+    config: { damping: 7, stiffness: 240 },
+    durationInFrames: 22,
+  });
+  const line2Scale = interpolate(line2Spring, [0, 1], [0.2, 1]);
+  const line2Opacity = interpolate(frame, [18, 28], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Exit
+  const exitOpacity = interpolate(frame, [80, 90], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingLeft: SAFE_X,
+          paddingRight: SAFE_X,
+          paddingTop: SAFE_TOP,
+          paddingBottom: SAFE_BOTTOM,
+        }}
+      >
+        {/* Lawn Season */}
         <div
           style={{
-            opacity: headOpacity,
-            transform: `scale(${headScale})`,
-            textAlign: "center",
+            opacity: line1Opacity,
+            transform: `scale(${line1Scale})`,
+            marginBottom: 8,
           }}
         >
           <span
             style={{
-              fontFamily: FONT,
+              fontFamily: BOLD,
               fontWeight: 900,
-              fontSize: 80,
-              lineHeight: 1.15,
+              fontSize: 92,
               color: WHITE,
-              textShadow: "0 4px 24px rgba(0,0,0,0.25)",
+              textShadow: "0 3px 20px rgba(0,0,0,0.15)",
             }}
           >
             Lawn Season
           </span>
-          <br />
+        </div>
+
+        {/* STARTS NOW */}
+        <div
+          style={{
+            opacity: line2Opacity,
+            transform: `scale(${line2Scale})`,
+          }}
+        >
           <span
             style={{
-              fontFamily: FONT,
+              fontFamily: BOLD,
               fontWeight: 900,
-              fontSize: 80,
-              lineHeight: 1.15,
-              color: WHITE,
-              textShadow: "0 4px 24px rgba(0,0,0,0.25)",
+              fontSize: 120,
+              letterSpacing: 4,
+              color: ORANGE,
+              textShadow: `0 0 40px ${ORANGE}60, 0 4px 16px rgba(0,0,0,0.2)`,
             }}
           >
-            is Here
+            STARTS NOW
           </span>
         </div>
       </AbsoluteFill>
@@ -256,473 +239,205 @@ const IntroScene: React.FC = () => {
   );
 };
 
-// ─── Dead lawn background (BEFORE) ─────────────────────────────────────────
+// ─── Scene 3: Services bar wipe (5-8s / 150-240 frames) ────────────────────
 
-const DeadLawnBg: React.FC = () => {
-  const frame = useCurrentFrame();
-
-  // Subtle drift for texture
-  const drift = frame * 0.15;
-
-  return (
-    <AbsoluteFill>
-      {/* Base brown */}
-      <AbsoluteFill style={{ background: BROWN }} />
-
-      {/* Texture stripes */}
-      <AbsoluteFill
-        style={{
-          backgroundImage: deadGrassPatterns,
-          backgroundSize: "60px 60px, 40px 40px",
-          backgroundPosition: `${drift}px ${drift * 0.5}px`,
-          opacity: 0.7,
-        }}
-      />
-
-      {/* Random brown patches */}
-      {[
-        { x: 120, y: 400, w: 300, h: 200, color: BROWN_DARK },
-        { x: 600, y: 700, w: 250, h: 180, color: BROWN_LIGHT },
-        { x: 80, y: 1100, w: 350, h: 220, color: BROWN_DARK },
-        { x: 500, y: 1400, w: 280, h: 160, color: "#7A6548" },
-        { x: 300, y: 300, w: 200, h: 250, color: BROWN_LIGHT },
-        { x: 700, y: 900, w: 220, h: 200, color: "#6B5740" },
-        { x: 150, y: 1600, w: 260, h: 180, color: BROWN_DARK },
-        { x: 650, y: 1200, w: 300, h: 190, color: "#9A8466" },
-      ].map((patch, i) => (
-        <div
-          key={i}
-          style={{
-            position: "absolute",
-            left: patch.x,
-            top: patch.y,
-            width: patch.w,
-            height: patch.h,
-            borderRadius: "50%",
-            background: `radial-gradient(ellipse, ${patch.color} 0%, transparent 70%)`,
-            opacity: 0.6,
-          }}
-        />
-      ))}
-
-      {/* Desaturated overlay */}
-      <AbsoluteFill
-        style={{
-          background: "rgba(139,115,85,0.15)",
-          mixBlendMode: "multiply",
-        }}
-      />
-
-      {/* Dry cracks pattern */}
-      {[
-        { x1: 200, y1: 600, x2: 400, y2: 650 },
-        { x1: 500, y1: 1000, x2: 700, y2: 1020 },
-        { x1: 150, y1: 1350, x2: 450, y2: 1380 },
-      ].map((crack, i) => (
-        <div
-          key={`crack-${i}`}
-          style={{
-            position: "absolute",
-            left: crack.x1,
-            top: crack.y1,
-            width: crack.x2 - crack.x1,
-            height: 3,
-            background: `linear-gradient(90deg, transparent, ${BROWN_DARK}80, transparent)`,
-            transform: `rotate(${(i * 5 - 3)}deg)`,
-            opacity: 0.5,
-          }}
-        />
-      ))}
-    </AbsoluteFill>
-  );
-};
-
-// ─── Lush lawn background (AFTER) ───────────────────────────────────────────
-
-const LushLawnBg: React.FC = () => {
-  const frame = useCurrentFrame();
-  const drift = frame * 0.12;
-
-  // Shimmer effect
-  const shimmerX = interpolate(Math.sin(frame * 0.06), [-1, 1], [0, 100]);
-  const shimmerAlpha = interpolate(Math.sin(frame * 0.08), [-1, 1], [0.02, 0.08]);
-
-  return (
-    <AbsoluteFill>
-      {/* Base green */}
-      <AbsoluteFill style={{ background: GREEN_BRIGHT }} />
-
-      {/* Grass texture */}
-      <AbsoluteFill
-        style={{
-          backgroundImage: lushGrassPatterns,
-          backgroundSize: "50px 50px, 35px 35px",
-          backgroundPosition: `${drift}px ${drift * 0.4}px`,
-          opacity: 0.6,
-        }}
-      />
-
-      {/* Gradient variation patches */}
-      {[
-        { x: 100, y: 350, w: 350, h: 250, color: GREEN_LIGHT },
-        { x: 550, y: 650, w: 300, h: 230, color: "#81C784" },
-        { x: 50, y: 1050, w: 400, h: 280, color: GREEN_LIGHT },
-        { x: 450, y: 1350, w: 320, h: 200, color: "#A5D6A7" },
-        { x: 250, y: 250, w: 280, h: 300, color: "#66BB6A" },
-        { x: 680, y: 850, w: 280, h: 240, color: "#81C784" },
-        { x: 120, y: 1550, w: 300, h: 220, color: GREEN_LIGHT },
-        { x: 600, y: 1150, w: 340, h: 230, color: "#A5D6A7" },
-      ].map((patch, i) => (
-        <div
-          key={i}
-          style={{
-            position: "absolute",
-            left: patch.x,
-            top: patch.y,
-            width: patch.w,
-            height: patch.h,
-            borderRadius: "50%",
-            background: `radial-gradient(ellipse, ${patch.color} 0%, transparent 70%)`,
-            opacity: 0.45,
-          }}
-        />
-      ))}
-
-      {/* Sunlight shimmer sweep */}
-      <AbsoluteFill
-        style={{
-          background: `linear-gradient(135deg, transparent ${shimmerX - 15}%, rgba(255,255,255,${shimmerAlpha}) ${shimmerX}%, transparent ${shimmerX + 15}%)`,
-        }}
-      />
-
-      {/* Warm light overlay */}
-      <AbsoluteFill
-        style={{
-          background: "radial-gradient(ellipse 90% 40% at 50% 25%, rgba(255,255,200,0.06) 0%, transparent 70%)",
-        }}
-      />
-    </AbsoluteFill>
-  );
-};
-
-// ─── BEFORE label ───────────────────────────────────────────────────────────
-
-const BeforeLabel: React.FC = () => {
+const ServicesScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const labelSpring = spring({
-    frame: frame - 6,
-    fps,
-    config: { damping: 10, stiffness: 200 },
-    durationInFrames: 20,
-  });
-  const labelScale = interpolate(labelSpring, [0, 1], [0.4, 1]);
-  const labelOpacity = interpolate(frame, [6, 18], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Subtle red/warning tint badge
-  const badgePulse = interpolate(Math.sin(frame * 0.1), [-1, 1], [0.85, 1]);
-
-  return (
-    <AbsoluteFill
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingTop: SAFE_TOP,
-        paddingBottom: SAFE_BOTTOM,
-      }}
-    >
-      <div
-        style={{
-          opacity: labelOpacity,
-          transform: `scale(${labelScale * badgePulse})`,
-          textAlign: "center",
-        }}
-      >
-        {/* Dark scrim behind text */}
-        <div
-          style={{
-            background: "rgba(0,0,0,0.45)",
-            borderRadius: 24,
-            paddingLeft: 64,
-            paddingRight: 64,
-            paddingTop: 28,
-            paddingBottom: 28,
-            border: "3px solid rgba(255,255,255,0.2)",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: FONT,
-              fontWeight: 900,
-              fontSize: 110,
-              letterSpacing: 8,
-              color: WHITE,
-              textShadow: "0 4px 20px rgba(0,0,0,0.5)",
-            }}
-          >
-            BEFORE
-          </span>
-        </div>
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-// ─── AFTER label ────────────────────────────────────────────────────────────
-
-const AfterLabel: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const labelSpring = spring({
-    frame: frame - 6,
-    fps,
-    config: { damping: 8, stiffness: 220 },
-    durationInFrames: 20,
-  });
-  const labelScale = interpolate(labelSpring, [0, 1], [0.4, 1]);
-  const labelOpacity = interpolate(frame, [6, 18], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Glow pulse
-  const glowPulse = interpolate(Math.sin(frame * 0.12), [-1, 1], [0.4, 0.8]);
-
-  return (
-    <AbsoluteFill
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingTop: SAFE_TOP,
-        paddingBottom: SAFE_BOTTOM,
-      }}
-    >
-      <div
-        style={{
-          opacity: labelOpacity,
-          transform: `scale(${labelScale})`,
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            background: "rgba(58,125,52,0.6)",
-            borderRadius: 24,
-            paddingLeft: 64,
-            paddingRight: 64,
-            paddingTop: 28,
-            paddingBottom: 28,
-            border: `3px solid rgba(255,255,255,0.35)`,
-            boxShadow: `0 0 60px rgba(76,175,80,${glowPulse})`,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: FONT,
-              fontWeight: 900,
-              fontSize: 110,
-              letterSpacing: 8,
-              color: WHITE,
-              textShadow: `0 0 30px rgba(76,175,80,0.6), 0 4px 20px rgba(0,0,0,0.4)`,
-            }}
-          >
-            AFTER
-          </span>
-        </div>
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-// ─── Wipe transition (left to right reveal) ─────────────────────────────────
-
-const WipeReveal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const frame = useCurrentFrame();
-
-  // Wipe progress: 0 to 1 over 90 frames (3 seconds)
-  const progress = interpolate(frame, [0, 90], [0, 100], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.inOut(Easing.cubic),
-  });
-
-  return (
-    <AbsoluteFill
-      style={{
-        clipPath: `inset(0 ${100 - progress}% 0 0)`,
-      }}
-    >
-      {children}
-    </AbsoluteFill>
-  );
-};
-
-// ─── Wipe line accent ───────────────────────────────────────────────────────
-
-const WipeLine: React.FC = () => {
-  const frame = useCurrentFrame();
-
-  const xPos = interpolate(frame, [0, 90], [0, 100], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.inOut(Easing.cubic),
-  });
-
-  const lineOpacity = interpolate(frame, [0, 8, 82, 90], [0, 1, 1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Glow intensity
-  const glowPulse = interpolate(Math.sin(frame * 0.2), [-1, 1], [0.5, 1]);
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${xPos}%`,
-        top: 0,
-        width: 8,
-        height: H,
-        marginLeft: -4,
-        background: `linear-gradient(180deg, ${ORANGE}, ${WHITE}, ${ORANGE})`,
-        opacity: lineOpacity,
-        boxShadow: `0 0 ${30 * glowPulse}px ${ORANGE}, 0 0 ${60 * glowPulse}px ${ORANGE}50`,
-        zIndex: 10,
-      }}
-    />
-  );
-};
-
-// ─── Grass clippings burst during wipe ──────────────────────────────────────
-
-const WIPE_CLIPPINGS = Array.from({ length: 35 }, (_, i) => ({
-  yBase: 100 + ((i * 137.508) % 1) * 1720,
-  speed: 2 + (i % 6) * 1.5,
-  size: 3 + (i % 4) * 2,
-  yDrift: (i % 2 === 0 ? 1 : -1) * (10 + (i % 5) * 8),
-  color: i % 3 === 0 ? GREEN_BRIGHT : i % 3 === 1 ? GREEN_LIGHT : "#81C784",
-  delay: (i % 8) * 1.5,
-}));
-
-const WipeClippings: React.FC = () => {
-  const frame = useCurrentFrame();
-
-  const wipeX = interpolate(frame, [0, 90], [0, W], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.inOut(Easing.cubic),
-  });
-
-  return (
-    <>
-      {WIPE_CLIPPINGS.map((c, i) => {
-        const localFrame = frame - c.delay;
-        if (localFrame < 0) return null;
-
-        const xPos = wipeX + Math.sin(localFrame * 0.3) * 30 + c.speed * localFrame * 0.5;
-        const yPos = c.yBase + Math.sin(localFrame * 0.15) * c.yDrift;
-        const rot = localFrame * (3 + (i % 4) * 2);
-        const opacity = interpolate(localFrame, [0, 5, 70, 85], [0, 0.8, 0.8, 0], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        });
-
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: xPos,
-              top: yPos,
-              width: c.size,
-              height: c.size * 3,
-              borderRadius: 2,
-              background: c.color,
-              opacity,
-              transform: `rotate(${rot}deg)`,
-              zIndex: 11,
-            }}
-          />
-        );
-      })}
-    </>
-  );
-};
-
-// ─── CTA Scene (13-15s, 60 frames) ─────────────────────────────────────────
-
-const CTAScene: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  // Background glow
-  const glowAlpha = interpolate(Math.sin(frame * 0.1), [-1, 1], [0.1, 0.25]);
-
-  // "Season starts April 15th" springs in
-  const dateSpring = spring({
-    frame,
-    fps,
-    config: { damping: 10, stiffness: 190 },
-    durationInFrames: 20,
-  });
-  const dateScale = interpolate(dateSpring, [0, 1], [0.5, 1]);
-  const dateOpacity = interpolate(frame, [0, 12], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Divider
-  const lineWidth = interpolate(frame, [12, 26], [0, 100], {
+  // Orange accent bar wipes across top area
+  const barWidth = interpolate(frame, [0, 20], [0, 100], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
   });
 
-  // "Call 248-747-LAWN" bounces in
-  const phoneSpring = spring({
+  // "Mowing." slides in
+  const w1Spring = spring({
     frame: frame - 16,
     fps,
-    config: { damping: 8, stiffness: 220 },
-    durationInFrames: 22,
+    config: { damping: 10, stiffness: 190 },
+    durationInFrames: 18,
   });
-  const phoneScale = interpolate(phoneSpring, [0, 1], [0.3, 1]);
-  const phoneOpacity = interpolate(frame, [16, 26], [0, 1], {
+  const w1X = interpolate(w1Spring, [0, 1], [-80, 0]);
+  const w1Opacity = interpolate(frame, [16, 26], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const phonePulse = frame > 30 ? 1 + interpolate(Math.sin((frame - 30) * 0.25), [-1, 1], [0, 0.03]) : 1;
 
-  // "Book Today" sub-CTA
-  const bookOpacity = interpolate(frame, [30, 42], [0, 1], {
+  // "Cleanup." slides in
+  const w2Spring = spring({
+    frame: frame - 26,
+    fps,
+    config: { damping: 10, stiffness: 190 },
+    durationInFrames: 18,
+  });
+  const w2X = interpolate(w2Spring, [0, 1], [-80, 0]);
+  const w2Opacity = interpolate(frame, [26, 36], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const bookY = interpolate(frame, [30, 42], [20, 0], {
+
+  // "Curb Appeal." slides in
+  const w3Spring = spring({
+    frame: frame - 36,
+    fps,
+    config: { damping: 10, stiffness: 190 },
+    durationInFrames: 18,
+  });
+  const w3X = interpolate(w3Spring, [0, 1], [-80, 0]);
+  const w3Opacity = interpolate(frame, [36, 46], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Exit
+  const exitOpacity = interpolate(frame, [80, 90], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   return (
-    <AbsoluteFill>
-      {/* Green background */}
-      <AbsoluteFill style={{ background: GREEN }} />
-
-      {/* Radial glow */}
-      <AbsoluteFill
+    <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
+      {/* Orange accent bar */}
+      <div
         style={{
-          background: `radial-gradient(ellipse 80% 45% at 50% 50%, rgba(76,175,80,${glowAlpha}) 0%, transparent 70%)`,
+          position: "absolute",
+          top: "42%",
+          left: 0,
+          width: `${barWidth}%`,
+          height: 6,
+          background: ORANGE,
+          boxShadow: `0 0 20px ${ORANGE}50`,
         }}
       />
 
-      {/* Content */}
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingLeft: SAFE_X,
+          paddingRight: SAFE_X,
+          paddingTop: SAFE_TOP,
+          paddingBottom: SAFE_BOTTOM,
+          gap: 20,
+        }}
+      >
+        {/* Mowing */}
+        <div
+          style={{
+            opacity: w1Opacity,
+            transform: `translateX(${w1X}px)`,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: BOLD,
+              fontWeight: 900,
+              fontSize: 88,
+              color: WHITE,
+            }}
+          >
+            Mowing.
+          </span>
+        </div>
+
+        {/* Cleanup */}
+        <div
+          style={{
+            opacity: w2Opacity,
+            transform: `translateX(${w2X}px)`,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: BOLD,
+              fontWeight: 900,
+              fontSize: 88,
+              color: WHITE,
+            }}
+          >
+            Cleanup.
+          </span>
+        </div>
+
+        {/* Curb Appeal */}
+        <div
+          style={{
+            opacity: w3Opacity,
+            transform: `translateX(${w3X}px)`,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: BOLD,
+              fontWeight: 900,
+              fontSize: 88,
+              color: ORANGE,
+              textShadow: `0 0 30px ${ORANGE}40`,
+            }}
+          >
+            Curb Appeal.
+          </span>
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 4: Serving Oakland County (8-11s / 240-330 frames) ───────────────
+
+const LocationScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  // Pin icon drops in
+  const pinSpring = spring({
+    frame: frame - 2,
+    fps,
+    config: { damping: 8, stiffness: 220 },
+    durationInFrames: 20,
+  });
+  const pinY = interpolate(pinSpring, [0, 1], [-60, 0]);
+  const pinScale = interpolate(pinSpring, [0, 1], [0.4, 1]);
+  const pinOpacity = interpolate(frame, [2, 14], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // "Serving" + "Oakland County" bounces in
+  const textSpring = spring({
+    frame: frame - 10,
+    fps,
+    config: { damping: 9, stiffness: 200 },
+    durationInFrames: 22,
+  });
+  const textScale = interpolate(textSpring, [0, 1], [0.4, 1]);
+  const textOpacity = interpolate(frame, [10, 22], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // "& Southeast Michigan" fades in
+  const subOpacity = interpolate(frame, [30, 44], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const subY = interpolate(frame, [30, 44], [15, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Exit
+  const exitOpacity = interpolate(frame, [80, 90], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
       <AbsoluteFill
         style={{
           display: "flex",
@@ -735,121 +450,366 @@ const CTAScene: React.FC = () => {
           paddingBottom: SAFE_BOTTOM,
         }}
       >
-        {/* Season starts April 15th */}
+        {/* Location pin */}
         <div
           style={{
-            opacity: dateOpacity,
-            transform: `scale(${dateScale})`,
+            opacity: pinOpacity,
+            transform: `translateY(${pinY}px) scale(${pinScale})`,
+            marginBottom: 28,
+          }}
+        >
+          {/* SVG pin icon */}
+          <svg
+            width="72"
+            height="96"
+            viewBox="0 0 24 32"
+            fill="none"
+          >
+            <path
+              d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20C24 5.373 18.627 0 12 0z"
+              fill={ORANGE}
+            />
+            <circle cx="12" cy="12" r="5" fill={WHITE} />
+          </svg>
+        </div>
+
+        {/* Serving */}
+        <div
+          style={{
+            opacity: textOpacity,
+            transform: `scale(${textScale})`,
             textAlign: "center",
-            marginBottom: 10,
+            marginBottom: 4,
           }}
         >
           <span
             style={{
-              fontFamily: FONT,
-              fontWeight: 900,
-              fontSize: 64,
-              lineHeight: 1.2,
+              fontFamily: REGULAR,
+              fontWeight: 400,
+              fontSize: 52,
               color: WHITE,
-              textShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              opacity: 0.85,
             }}
           >
-            Season starts
+            Serving
           </span>
-          <br />
+        </div>
+
+        {/* Oakland County */}
+        <div
+          style={{
+            opacity: textOpacity,
+            transform: `scale(${textScale})`,
+            textAlign: "center",
+            marginBottom: 16,
+          }}
+        >
           <span
             style={{
-              fontFamily: FONT,
+              fontFamily: BOLD,
               fontWeight: 900,
-              fontSize: 88,
-              lineHeight: 1.2,
-              color: ORANGE,
-              textShadow: `0 0 30px ${ORANGE}70, 0 4px 16px rgba(0,0,0,0.3)`,
+              fontSize: 86,
+              color: WHITE,
+              textShadow: "0 3px 20px rgba(0,0,0,0.15)",
             }}
           >
-            April 15th
+            Oakland County
+          </span>
+        </div>
+
+        {/* & Southeast Michigan */}
+        <div
+          style={{
+            opacity: subOpacity,
+            transform: `translateY(${subY}px)`,
+            textAlign: "center",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: REGULAR,
+              fontWeight: 400,
+              fontSize: 38,
+              color: WHITE,
+              opacity: 0.75,
+            }}
+          >
+            & Southeast Michigan
+          </span>
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 5: Date callout (11-13s / 330-390 frames) ────────────────────────
+
+const DateScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  // "April 15th" scale pop
+  const dateSpring = spring({
+    frame: frame - 2,
+    fps,
+    config: { damping: 8, stiffness: 210 },
+    durationInFrames: 22,
+  });
+  const dateScale = interpolate(dateSpring, [0, 1], [0.25, 1]);
+  const dateOpacity = interpolate(frame, [2, 14], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Subtle pulse on the date
+  const datePulse =
+    frame > 20
+      ? 1 + interpolate(Math.sin((frame - 20) * 0.18), [-1, 1], [0, 0.025])
+      : 1;
+
+  // "We're already booking up" fades in
+  const subOpacity = interpolate(frame, [22, 36], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const subY = interpolate(frame, [22, 36], [20, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Exit
+  const exitOpacity = interpolate(frame, [52, 60], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{ background: GREEN, opacity: exitOpacity }}>
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingLeft: SAFE_X,
+          paddingRight: SAFE_X,
+          paddingTop: SAFE_TOP,
+          paddingBottom: SAFE_BOTTOM,
+        }}
+      >
+        {/* April 15th */}
+        <div
+          style={{
+            opacity: dateOpacity,
+            transform: `scale(${dateScale * datePulse})`,
+            textAlign: "center",
+            marginBottom: 28,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: BOLD,
+              fontWeight: 900,
+              fontSize: 130,
+              lineHeight: 1,
+              color: WHITE,
+              textShadow: `0 0 40px rgba(255,255,255,0.2), 0 4px 20px rgba(0,0,0,0.2)`,
+            }}
+          >
+            April 15
+            <span style={{ fontSize: 80, verticalAlign: "super" }}>th</span>
+          </span>
+        </div>
+
+        {/* Orange accent dot */}
+        <div
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: "50%",
+            background: ORANGE,
+            marginBottom: 28,
+            opacity: subOpacity,
+            boxShadow: `0 0 16px ${ORANGE}80`,
+          }}
+        />
+
+        {/* We're already booking up */}
+        <div
+          style={{
+            opacity: subOpacity,
+            transform: `translateY(${subY}px)`,
+            textAlign: "center",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: REGULAR,
+              fontWeight: 400,
+              fontSize: 44,
+              color: WHITE,
+              opacity: 0.85,
+            }}
+          >
+            We're already booking up
+          </span>
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 6: CTA (13-15s / 390-450 frames) ────────────────────────────────
+
+const CTAScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  // "Call" label fades in
+  const callOpacity = interpolate(frame, [0, 12], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const callY = interpolate(frame, [0, 12], [-20, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Phone number pops in
+  const phoneSpring = spring({
+    frame: frame - 6,
+    fps,
+    config: { damping: 7, stiffness: 230 },
+    durationInFrames: 22,
+  });
+  const phoneScale = interpolate(phoneSpring, [0, 1], [0.3, 1]);
+  const phoneOpacity = interpolate(frame, [6, 16], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Phone number pulse
+  const phonePulse =
+    frame > 24
+      ? 1 + interpolate(Math.sin((frame - 24) * 0.22), [-1, 1], [0, 0.025])
+      : 1;
+
+  // Website slides up
+  const webOpacity = interpolate(frame, [22, 34], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const webY = interpolate(frame, [22, 34], [20, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Orange bottom bar grows in
+  const barHeight = interpolate(frame, [0, 18], [0, 120], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  return (
+    <AbsoluteFill style={{ background: GREEN }}>
+      {/* Orange bar at bottom */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: barHeight,
+          background: ORANGE,
+        }}
+      />
+
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingLeft: SAFE_X,
+          paddingRight: SAFE_X,
+          paddingTop: SAFE_TOP,
+          paddingBottom: SAFE_BOTTOM,
+        }}
+      >
+        {/* "Call" */}
+        <div
+          style={{
+            opacity: callOpacity,
+            transform: `translateY(${callY}px)`,
+            marginBottom: 8,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: REGULAR,
+              fontWeight: 400,
+              fontSize: 44,
+              color: WHITE,
+              opacity: 0.8,
+            }}
+          >
+            Call
+          </span>
+        </div>
+
+        {/* 248-747-LAWN */}
+        <div
+          style={{
+            opacity: phoneOpacity,
+            transform: `scale(${phoneScale * phonePulse})`,
+            marginBottom: 32,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: BOLD,
+              fontWeight: 900,
+              fontSize: 94,
+              color: WHITE,
+              letterSpacing: 2,
+              textShadow: "0 4px 24px rgba(0,0,0,0.2)",
+            }}
+          >
+            248-747-LAWN
           </span>
         </div>
 
         {/* Divider */}
         <div
           style={{
-            width: `${lineWidth}%`,
-            maxWidth: 500,
-            height: 5,
-            background: `linear-gradient(90deg, transparent, ${WHITE}CC, transparent)`,
-            borderRadius: 3,
-            marginTop: 32,
-            marginBottom: 40,
+            width: 80,
+            height: 4,
+            background: ORANGE,
+            borderRadius: 2,
+            marginBottom: 28,
+            opacity: webOpacity,
           }}
         />
 
-        {/* Call 248-747-LAWN */}
+        {/* Website */}
         <div
           style={{
-            opacity: phoneOpacity,
-            transform: `scale(${phoneScale * phonePulse})`,
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              background: "rgba(0,0,0,0.2)",
-              borderRadius: 20,
-              paddingLeft: 48,
-              paddingRight: 48,
-              paddingTop: 24,
-              paddingBottom: 24,
-              border: `3px solid ${ORANGE}`,
-              boxShadow: `0 0 30px ${ORANGE}40`,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: FONT,
-                fontWeight: 700,
-                fontSize: 40,
-                color: WHITE,
-                display: "block",
-                marginBottom: 4,
-              }}
-            >
-              Call
-            </span>
-            <span
-              style={{
-                fontFamily: FONT,
-                fontWeight: 900,
-                fontSize: 72,
-                color: WHITE,
-                letterSpacing: 2,
-                textShadow: `0 0 20px ${ORANGE}50`,
-              }}
-            >
-              248-747-LAWN
-            </span>
-          </div>
-        </div>
-
-        {/* Book Today */}
-        <div
-          style={{
-            opacity: bookOpacity,
-            transform: `translateY(${bookY}px)`,
-            marginTop: 36,
-            textAlign: "center",
+            opacity: webOpacity,
+            transform: `translateY(${webY}px)`,
           }}
         >
           <span
             style={{
-              fontFamily: FONT,
-              fontWeight: 700,
-              fontSize: 42,
+              fontFamily: REGULAR,
+              fontWeight: 400,
+              fontSize: 36,
               color: WHITE,
-              opacity: 0.85,
+              opacity: 0.8,
+              letterSpacing: 1,
             }}
           >
-            Book your spot today
+            kileyoutdoorservices.com
           </span>
         </div>
       </AbsoluteFill>
@@ -860,63 +820,35 @@ const CTAScene: React.FC = () => {
 // ─── Main Composition ───────────────────────────────────────────────────────
 
 export const KileyOutdoorVideo: React.FC = () => {
-  const { fps } = useVideoConfig();
-
-  // Timeline
-  const INTRO = 60;          // 0-2s
-  const BEFORE_START = 60;   // 2s
-  const BEFORE_DUR = 240;    // 2-10s (includes wipe period)
-  const WIPE_START = 210;    // 7s
-  const WIPE_DUR = 90;       // 7-10s
-  const AFTER_START = 210;   // 7s (revealed by wipe)
-  const AFTER_DUR = 180;     // 7-13s
-  const AFTER_LABEL_START = 300; // 10s (after wipe finishes)
-  const AFTER_LABEL_DUR = 90;   // 10-13s
-  const CTA_START = 390;     // 13s
-  const CTA_DUR = 60;        // 13-15s
-
   return (
-    <AbsoluteFill style={{ background: OFF_BLACK }}>
-      {/* Scene 1: Brand intro */}
-      <Sequence from={0} durationInFrames={INTRO} premountFor={fps}>
-        <IntroScene />
+    <AbsoluteFill style={{ background: GREEN }}>
+      {/* Scene 1: Brand intro (0-2s) */}
+      <Sequence from={0} durationInFrames={60}>
+        <BrandIntro />
       </Sequence>
 
-      {/* Scene 2: BEFORE lawn (bottom layer) */}
-      <Sequence from={BEFORE_START} durationInFrames={BEFORE_DUR} premountFor={fps}>
-        <DeadLawnBg />
+      {/* Scene 2: Lawn Season STARTS NOW (2-5s) */}
+      <Sequence from={60} durationInFrames={90}>
+        <HeadlineScene />
       </Sequence>
 
-      {/* BEFORE label (visible before wipe starts) */}
-      <Sequence from={BEFORE_START} durationInFrames={WIPE_START - BEFORE_START} premountFor={fps}>
-        <BeforeLabel />
+      {/* Scene 3: Mowing. Cleanup. Curb Appeal. (5-8s) */}
+      <Sequence from={150} durationInFrames={90}>
+        <ServicesScene />
       </Sequence>
 
-      {/* Scene 3-4: AFTER lawn revealed by wipe (top layer with clip) */}
-      <Sequence from={AFTER_START} durationInFrames={AFTER_DUR} premountFor={fps}>
-        <WipeReveal>
-          <LushLawnBg />
-        </WipeReveal>
+      {/* Scene 4: Serving Oakland County (8-11s) */}
+      <Sequence from={240} durationInFrames={90}>
+        <LocationScene />
       </Sequence>
 
-      {/* Wipe accent line */}
-      <Sequence from={WIPE_START} durationInFrames={WIPE_DUR} premountFor={fps}>
-        <WipeLine />
-        <WipeClippings />
+      {/* Scene 5: April 15th date callout (11-13s) */}
+      <Sequence from={330} durationInFrames={60}>
+        <DateScene />
       </Sequence>
 
-      {/* Wipe swoosh sound */}
-      <Sequence from={WIPE_START} durationInFrames={WIPE_DUR} premountFor={fps}>
-        <Audio src={staticFile("swoosh.wav")} volume={0.7} />
-      </Sequence>
-
-      {/* AFTER label (appears after wipe finishes) */}
-      <Sequence from={AFTER_LABEL_START} durationInFrames={AFTER_LABEL_DUR} premountFor={fps}>
-        <AfterLabel />
-      </Sequence>
-
-      {/* Scene 5: CTA */}
-      <Sequence from={CTA_START} durationInFrames={CTA_DUR} premountFor={fps}>
+      {/* Scene 6: CTA (13-15s) */}
+      <Sequence from={390} durationInFrames={60}>
         <CTAScene />
       </Sequence>
     </AbsoluteFill>
