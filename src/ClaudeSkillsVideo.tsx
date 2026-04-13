@@ -1,9 +1,11 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Audio,
   Sequence,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
   Easing,
@@ -18,7 +20,7 @@ const SAFE_X = 64;
 const SAFE_TOP = 260;
 const SAFE_BOTTOM = 380;
 
-// Palette
+// Palette — Kiley Organization brand colors + accents
 const BG = "#06060f";
 const PURPLE = "#a855f7";
 const PURPLE_MID = "#c084fc";
@@ -30,6 +32,11 @@ const WHITE = "#ffffff";
 const MUTED = "#94a3b8";
 const GH_DARK = "#0d1117";
 const GH_BORDER = "#30363d";
+
+// Kiley brand
+const KILEY_BLUE = "#19469D";
+const KILEY_ORANGE = "#F5821F";
+const KILEY_BLACK = "#1C1C1C";
 
 // ─── Background ──────────────────────────────────────────────────────────────
 
@@ -132,7 +139,7 @@ const HookScene: React.FC = () => {
           left: 0,
           right: 0,
           height: 5,
-          background: `linear-gradient(90deg, ${PURPLE}, ${BLUE}, ${ORANGE})`,
+          background: `linear-gradient(90deg, ${KILEY_BLUE}, ${KILEY_ORANGE}, ${KILEY_BLUE})`,
           opacity: 0.85,
         }}
       />
@@ -157,8 +164,8 @@ const HookScene: React.FC = () => {
               fontSize: 200,
               lineHeight: 1,
               letterSpacing: -6,
-              color: ORANGE,
-              textShadow: `0 0 28px rgba(249,115,22,0.7), 0 0 70px rgba(249,115,22,0.25)`,
+              color: KILEY_ORANGE,
+              textShadow: `0 0 28px ${KILEY_ORANGE}B3, 0 0 70px ${KILEY_ORANGE}40`,
             }}
           >
             FREE
@@ -185,7 +192,8 @@ const HookScene: React.FC = () => {
               fontWeight: 800,
               fontSize: 68,
               lineHeight: 1.15,
-              color: PURPLE_MID,
+              color: KILEY_BLUE,
+              textShadow: `0 0 20px ${KILEY_BLUE}60`,
             }}
           >
             Skills
@@ -214,7 +222,7 @@ const HookScene: React.FC = () => {
         <div style={{ opacity: bottomOpacity, transform: `translateY(${bottomY}px)`, textAlign: "center" }}>
           <span style={{ fontFamily: "system-ui", fontWeight: 600, fontSize: 36, color: MUTED }}>
             Here are the{" "}
-            <span style={{ color: ORANGE, fontWeight: 800 }}>top 5 repos</span>
+            <span style={{ color: KILEY_ORANGE, fontWeight: 800 }}>top 5 repos</span>
             {" "}you need
           </span>
         </div>
@@ -519,126 +527,258 @@ const RepoScene: React.FC<{ repoIndex: number }> = ({ repoIndex }) => {
   );
 };
 
-// ─── CTA Scene (2 s = 60 frames) ────────────────────────────────────────────
+// ─── Confetti / explosion particles for CTA ────────────────────────────────
+
+const CTA_PARTICLES = Array.from({ length: 60 }, (_, i) => {
+  const angle = (i / 60) * Math.PI * 2 + ((i * 37) % 7) * 0.3;
+  const speed = 3 + (i % 8) * 2.5;
+  const colors = [KILEY_BLUE, KILEY_ORANGE, WHITE, "#FFD700", "#FF4081", "#00E5FF"];
+  return {
+    angle,
+    speed,
+    color: colors[i % colors.length],
+    size: 6 + (i % 5) * 5,
+    rotSpeed: (i % 2 === 0 ? 1 : -1) * (3 + (i % 4) * 2),
+    shape: i % 3, // 0=circle, 1=square, 2=rectangle
+    delay: Math.floor(i / 15) * 2, // staggered bursts
+  };
+});
+
+// ─── CTA Scene (2 s = 60 frames) — Kiley brand ─────────────────────────────
 
 const CTAScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Title
-  const titleSpring = spring({ frame, fps, config: { damping: 18, stiffness: 160 }, durationInFrames: 22 });
-  const titleY = interpolate(titleSpring, [0, 1], [-35, 0]);
-  const titleOpacity = interpolate(frame, [0, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // Flash bang at start
+  const flashOpacity = interpolate(frame, [0, 6], [0.9, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
-  // BLDTATO brand
-  const brandSpring = spring({ frame: frame - 10, fps, config: { damping: 8, stiffness: 180 }, durationInFrames: 24 });
-  const brandScale = interpolate(brandSpring, [0, 1], [0.5, 1]);
-  const brandPulse = 1 + interpolate(Math.sin(frame * 0.2), [-1, 1], [0, 0.04]);
+  // Shockwave ring
+  const ringScale = interpolate(frame, [0, 20], [0, 12], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
+  });
+  const ringOpacity = interpolate(frame, [0, 20], [0.8, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
-  // Subtext
-  const subOpacity = interpolate(frame, [28, 42], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const subY = interpolate(frame, [28, 42], [15, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // "Sign Up for" — slides down from above
+  const titleSpring = spring({ frame: frame - 4, fps, config: { damping: 10, stiffness: 200 }, durationInFrames: 18 });
+  const titleY = interpolate(titleSpring, [0, 1], [-60, 0]);
+  const titleOpacity = interpolate(frame, [4, 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+  // "Kiley" logo slam — springs in with overshoot
+  const brandSpring = spring({ frame: frame - 8, fps, config: { damping: 6, stiffness: 260, mass: 1.2 }, durationInFrames: 28 });
+  const brandScale = interpolate(brandSpring, [0, 1], [0.15, 1]);
+  const brandRotation = interpolate(brandSpring, [0, 1], [-8, 0]);
+  const brandOpacity = interpolate(frame, [8, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+  // Kiley underline accent swoosh
+  const swooshWidth = interpolate(frame, [18, 32], [0, 100], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  // Subtext bounce in
+  const subSpring = spring({ frame: frame - 28, fps, config: { damping: 12, stiffness: 180 }, durationInFrames: 20 });
+  const subY = interpolate(subSpring, [0, 1], [40, 0]);
+  const subOpacity = interpolate(frame, [28, 38], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+  // Arrow bounce
+  const arrowBounce = frame > 38 ? Math.sin((frame - 38) * 0.4) * 8 : 0;
 
   return (
-    <AbsoluteFill
-      style={{
-        paddingLeft: SAFE_X,
-        paddingRight: SAFE_X,
-        paddingTop: SAFE_TOP,
-        paddingBottom: SAFE_BOTTOM,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {/* "Sign Up for" */}
-      <div
+    <AbsoluteFill>
+      {/* Radial gradient background burst */}
+      <AbsoluteFill
         style={{
-          opacity: titleOpacity,
-          transform: `translateY(${titleY}px)`,
-          textAlign: "center",
-          marginBottom: 16,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "system-ui, -apple-system, sans-serif",
-            fontWeight: 700,
-            fontSize: 52,
-            color: WHITE,
-          }}
-        >
-          Sign Up for
-        </span>
-      </div>
-
-      {/* BLDTATO */}
-      <div
-        style={{
-          transform: `scale(${brandScale * brandPulse})`,
-          marginBottom: 36,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Arial Black', Arial, system-ui, sans-serif",
-            fontWeight: 900,
-            fontSize: 130,
-            lineHeight: 1,
-            letterSpacing: -3,
-            color: ORANGE,
-            textShadow: `0 0 30px rgba(249,115,22,0.7), 0 0 80px rgba(249,115,22,0.25)`,
-          }}
-        >
-          BLDTATO
-        </span>
-      </div>
-
-      {/* Accent line */}
-      <div
-        style={{
-          opacity: subOpacity,
-          width: 120,
-          height: 4,
-          background: `linear-gradient(90deg, ${PURPLE}, ${ORANGE})`,
-          borderRadius: 2,
-          marginBottom: 32,
+          background: `radial-gradient(circle at 50% 48%, ${KILEY_BLUE}40 0%, transparent 55%)`,
+          opacity: interpolate(frame, [0, 15, 50], [0, 0.8, 0.4], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          }),
         }}
       />
 
-      {/* Subtext */}
+      {/* Shockwave ring */}
       <div
         style={{
-          opacity: subOpacity,
-          transform: `translateY(${subY}px)`,
-          textAlign: "center",
+          position: "absolute",
+          top: "48%",
+          left: "50%",
+          width: 80,
+          height: 80,
+          marginLeft: -40,
+          marginTop: -40,
+          borderRadius: "50%",
+          border: `4px solid ${KILEY_ORANGE}`,
+          opacity: ringOpacity,
+          transform: `scale(${ringScale})`,
+        }}
+      />
+
+      {/* Confetti explosion */}
+      {CTA_PARTICLES.map((p, i) => {
+        const t = Math.max(0, frame - p.delay) / 60;
+        const gravity = 600;
+        const vx = Math.cos(p.angle) * p.speed * 120;
+        const vy = Math.sin(p.angle) * p.speed * 120 - 200;
+        const px = 540 + vx * t;
+        const py = 920 + (vy * t + 0.5 * gravity * t * t);
+        const rot = t * p.rotSpeed * 360;
+        const opacity = interpolate(frame, [p.delay, p.delay + 4, 45, 60], [0, 1, 1, 0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
+
+        const w = p.shape === 2 ? p.size * 2.2 : p.size;
+        const h = p.size;
+        const br = p.shape === 0 ? "50%" : "2px";
+
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: px,
+              top: py,
+              width: w,
+              height: h,
+              borderRadius: br,
+              background: p.color,
+              opacity,
+              transform: `rotate(${rot}deg)`,
+              boxShadow: `0 0 ${p.size}px ${p.color}60`,
+            }}
+          />
+        );
+      })}
+
+      {/* White flash */}
+      <AbsoluteFill style={{ background: WHITE, opacity: flashOpacity }} />
+
+      {/* Main content */}
+      <AbsoluteFill
+        style={{
+          paddingLeft: SAFE_X,
+          paddingRight: SAFE_X,
+          paddingTop: SAFE_TOP,
+          paddingBottom: SAFE_BOTTOM,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <span
+        {/* "Sign Up for" */}
+        <div
           style={{
-            fontFamily: "system-ui, -apple-system, sans-serif",
-            fontWeight: 600,
-            fontSize: 36,
-            color: MUTED,
-            lineHeight: 1.5,
+            opacity: titleOpacity,
+            transform: `translateY(${titleY}px)`,
+            textAlign: "center",
+            marginBottom: 20,
           }}
         >
-          Get all these skills{"\n"}
-          <span style={{ color: WHITE, fontWeight: 800 }}>& so much more</span>
-        </span>
-      </div>
+          <span
+            style={{
+              fontFamily: "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif",
+              fontWeight: 700,
+              fontSize: 56,
+              color: WHITE,
+              textShadow: "0 2px 20px rgba(0,0,0,0.5)",
+            }}
+          >
+            Sign Up for
+          </span>
+        </div>
 
-      {/* Arrow / pointer */}
-      <div
-        style={{
-          opacity: subOpacity,
-          marginTop: 40,
-          fontSize: 48,
-        }}
-      >
-        👇
-      </div>
+        {/* Kiley — styled as logo */}
+        <div
+          style={{
+            opacity: brandOpacity,
+            transform: `scale(${brandScale}) rotate(${brandRotation}deg)`,
+            marginBottom: 14,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif",
+              fontWeight: 900,
+              fontSize: 160,
+              lineHeight: 1,
+              letterSpacing: 6,
+              color: KILEY_BLUE,
+              textShadow: `0 0 40px ${KILEY_BLUE}90, 0 0 100px ${KILEY_BLUE}40, 0 4px 8px rgba(0,0,0,0.5)`,
+            }}
+          >
+            Kiley
+          </span>
+        </div>
+
+        {/* Accent swoosh underline */}
+        <div
+          style={{
+            width: `${swooshWidth}%`,
+            maxWidth: 420,
+            height: 6,
+            background: `linear-gradient(90deg, ${KILEY_ORANGE}, ${KILEY_BLUE})`,
+            borderRadius: 3,
+            marginBottom: 36,
+            boxShadow: `0 0 20px ${KILEY_ORANGE}60`,
+          }}
+        />
+
+        {/* Subtext */}
+        <div
+          style={{
+            opacity: subOpacity,
+            transform: `translateY(${subY}px)`,
+            textAlign: "center",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif",
+              fontWeight: 600,
+              fontSize: 38,
+              color: MUTED,
+              lineHeight: 1.5,
+            }}
+          >
+            Get all these skills
+          </span>
+          <br />
+          <span
+            style={{
+              fontFamily: "'Liberation Sans', 'DejaVu Sans', system-ui, sans-serif",
+              fontWeight: 800,
+              fontSize: 42,
+              color: KILEY_ORANGE,
+              textShadow: `0 0 20px ${KILEY_ORANGE}50`,
+            }}
+          >
+            & so much more
+          </span>
+        </div>
+
+        {/* Bouncing arrow */}
+        <div
+          style={{
+            opacity: subOpacity,
+            marginTop: 44,
+            fontSize: 52,
+            transform: `translateY(${arrowBounce}px)`,
+          }}
+        >
+          👇
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
@@ -655,7 +795,7 @@ const Wipe: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: `linear-gradient(135deg, ${PURPLE} 0%, ${BLUE} 50%, ${ORANGE} 100%)`,
+        background: `linear-gradient(135deg, ${KILEY_BLUE} 0%, ${KILEY_ORANGE} 50%, ${KILEY_BLUE} 100%)`,
         transform: `translateX(${x}px)`,
       }}
     />
@@ -712,6 +852,7 @@ export const ClaudeSkillsVideo: React.FC = () => {
       {/* CTA */}
       <Sequence from={ctaStart} durationInFrames={CTA_DUR} premountFor={fps}>
         <CTAScene />
+        <Audio src={staticFile("boom.wav")} volume={0.8} />
       </Sequence>
 
       {/* Wipe: Hook → Repo 1 */}
