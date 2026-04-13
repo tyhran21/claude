@@ -13,10 +13,10 @@ import {
 
 const W = 1080;
 
-// Short-form video safe zones (TikTok / Reels)
+// Short-form safe zones
 const SAFE_X = 64;
-const SAFE_TOP = 260; // avoid top UI chrome
-const SAFE_BOTTOM = 380; // avoid like/comment/share buttons
+const SAFE_TOP = 260;
+const SAFE_BOTTOM = 380;
 
 // Palette
 const BG = "#06060f";
@@ -25,8 +25,11 @@ const PURPLE_MID = "#c084fc";
 const BLUE = "#3b82f6";
 const ORANGE = "#f97316";
 const GREEN = "#22c55e";
+const YELLOW = "#eab308";
 const WHITE = "#ffffff";
 const MUTED = "#94a3b8";
+const GH_DARK = "#0d1117";
+const GH_BORDER = "#30363d";
 
 // ─── Background ──────────────────────────────────────────────────────────────
 
@@ -41,15 +44,11 @@ const PARTICLES = Array.from({ length: 28 }, (_, i) => ({
 
 const Background: React.FC = () => {
   const frame = useCurrentFrame();
-
   const glowAlpha = interpolate(Math.sin(frame * 0.035), [-1, 1], [0.1, 0.2]);
 
   return (
     <AbsoluteFill>
-      {/* Base */}
       <AbsoluteFill style={{ background: BG }} />
-
-      {/* Moving grid */}
       <AbsoluteFill
         style={{
           backgroundImage: [
@@ -61,23 +60,17 @@ const Background: React.FC = () => {
           backgroundPositionY: `${(frame * 0.22) % 80}px`,
         }}
       />
-
-      {/* Radial glow */}
       <AbsoluteFill
         style={{
           background: `radial-gradient(ellipse 75% 38% at 50% 44%, rgba(168,85,247,${glowAlpha}) 0%, transparent 70%)`,
         }}
       />
-
-      {/* Floating particles */}
       {PARTICLES.map((p, i) => {
-        const yPos = (p.y - (frame * p.speed) % 1920 + 1920) % 1920;
-        const fadeOpacity = interpolate(
-          yPos,
-          [0, 150, 1920 - 150, 1920],
-          [0, p.baseOpacity, p.baseOpacity, 0],
-          { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
+        const yPos = (p.y - ((frame * p.speed) % 1920) + 1920) % 1920;
+        const fadeOpacity = interpolate(yPos, [0, 150, 1770, 1920], [0, p.baseOpacity, p.baseOpacity, 0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
         return (
           <div
             key={i}
@@ -99,65 +92,50 @@ const Background: React.FC = () => {
   );
 };
 
-// ─── Scene 1: Viral Hook (frames 0-149 / 5 s) ────────────────────────────────
+// ─── Scene 1: Viral Hook (0–3 s = 90 frames) ────────────────────────────────
 
 const HookScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // ── White flash on entry
-  const flashOpacity = interpolate(frame, [0, 10], [0.85, 0], {
+  const flashOpacity = interpolate(frame, [0, 8], [0.85, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: Easing.out(Easing.quad),
   });
 
-  // ── "Claude Code" badge slides from right
-  const badgeSpring = spring({ frame: frame - 5, fps, config: { damping: 18, stiffness: 140 }, durationInFrames: 28 });
-  const badgeX = interpolate(badgeSpring, [0, 1], [180, 0]);
-  const badgeOpacity = interpolate(frame, [5, 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // "FREE" slams up
+  const freeSpring = spring({ frame, fps, config: { damping: 10, stiffness: 220 }, durationInFrames: 20 });
+  const freeY = interpolate(freeSpring, [0, 1], [80, 0]);
+  const freePulse = 1 + interpolate(Math.sin(frame * 0.16), [-1, 1], [0, 0.025]);
 
-  // ── "FREE" slams up
-  const freeSpring = spring({ frame, fps, config: { damping: 10, stiffness: 220 }, durationInFrames: 22 });
-  const freeY = interpolate(freeSpring, [0, 1], [90, 0]);
-  const freePulse = 1 + interpolate(Math.sin(frame * 0.14), [-1, 1], [0, 0.028]);
+  // "Claude Code Skills" appears
+  const subSpring = spring({ frame: frame - 12, fps, config: { damping: 14, stiffness: 160 }, durationInFrames: 24 });
+  const subScale = interpolate(subSpring, [0, 1], [0.5, 1]);
+  const subOpacity = interpolate(frame, [12, 28], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  // ── "Skills" pops in with scale bounce
-  const skillsSpring = spring({ frame: frame - 20, fps, config: { damping: 9, stiffness: 180 }, durationInFrames: 28 });
-  const skillsScale = interpolate(skillsSpring, [0, 1], [0.45, 1]);
-  const skillsOpacity = interpolate(frame, [20, 36], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // "on GitHub 🔥"
+  const ghSpring = spring({ frame: frame - 28, fps, config: { damping: 8 }, durationInFrames: 28 });
+  const ghY = interpolate(ghSpring, [0, 1], [-45, 0]);
+  const ghOpacity = interpolate(frame, [28, 44], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  // ── "on GitHub 🔥" bounces in
-  const githubSpring = spring({ frame: frame - 38, fps, config: { damping: 7 }, durationInFrames: 32 });
-  const githubY = interpolate(githubSpring, [0, 1], [-55, 0]);
-  const githubOpacity = interpolate(frame, [38, 55], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  // ── Counter + subtext fades in
-  const countOpacity = interpolate(frame, [65, 84], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const countY = interpolate(frame, [65, 88], [18, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const subtextOpacity = interpolate(frame, [84, 104], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  // ── Blinking cursor on counter
-  const cursorBlink = Math.floor(frame / 18) % 2 === 0 ? 1 : 0;
+  // "Here are the top 5..."
+  const bottomOpacity = interpolate(frame, [50, 68], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const bottomY = interpolate(frame, [50, 68], [15, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill>
-      {/* Flash */}
       <AbsoluteFill style={{ background: WHITE, opacity: flashOpacity }} />
-
-      {/* Glowing accent strip */}
       <div
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           right: 0,
-          height: 6,
+          height: 5,
           background: `linear-gradient(90deg, ${PURPLE}, ${BLUE}, ${ORANGE})`,
           opacity: 0.85,
         }}
       />
-
       <AbsoluteFill
         style={{
           display: "flex",
@@ -168,45 +146,15 @@ const HookScene: React.FC = () => {
           paddingRight: SAFE_X,
           paddingTop: SAFE_TOP,
           paddingBottom: SAFE_BOTTOM,
-          gap: 0,
         }}
       >
-        {/* Badge */}
-        <div
-          style={{
-            opacity: badgeOpacity,
-            transform: `translateX(${badgeX}px)`,
-            background: "rgba(168,85,247,0.18)",
-            border: `1.5px solid rgba(168,85,247,0.45)`,
-            borderRadius: 40,
-            paddingLeft: 28,
-            paddingRight: 28,
-            paddingTop: 11,
-            paddingBottom: 11,
-            marginBottom: 28,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "system-ui, -apple-system, sans-serif",
-              fontWeight: 700,
-              fontSize: 30,
-              color: PURPLE_MID,
-              letterSpacing: 3,
-              textTransform: "uppercase" as const,
-            }}
-          >
-            Claude Code
-          </span>
-        </div>
-
         {/* FREE */}
-        <div style={{ transform: `translateY(${freeY}px) scale(${freePulse})`, marginBottom: 4 }}>
+        <div style={{ transform: `translateY(${freeY}px) scale(${freePulse})`, marginBottom: 10 }}>
           <span
             style={{
               fontFamily: "'Arial Black', Arial, system-ui, sans-serif",
               fontWeight: 900,
-              fontSize: 196,
+              fontSize: 200,
               lineHeight: 1,
               letterSpacing: -6,
               color: ORANGE,
@@ -217,22 +165,27 @@ const HookScene: React.FC = () => {
           </span>
         </div>
 
-        {/* Skills */}
-        <div
-          style={{
-            opacity: skillsOpacity,
-            transform: `scale(${skillsScale})`,
-            marginBottom: 26,
-          }}
-        >
+        {/* Claude Code Skills */}
+        <div style={{ opacity: subOpacity, transform: `scale(${subScale})`, textAlign: "center", marginBottom: 24 }}>
           <span
             style={{
               fontFamily: "system-ui, -apple-system, sans-serif",
               fontWeight: 800,
-              fontSize: 78,
-              lineHeight: 1,
-              letterSpacing: -2,
+              fontSize: 68,
+              lineHeight: 1.15,
               color: WHITE,
+            }}
+          >
+            Claude Code
+          </span>
+          <br />
+          <span
+            style={{
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              fontWeight: 800,
+              fontSize: 68,
+              lineHeight: 1.15,
+              color: PURPLE_MID,
             }}
           >
             Skills
@@ -240,20 +193,11 @@ const HookScene: React.FC = () => {
         </div>
 
         {/* on GitHub 🔥 */}
-        <div
-          style={{
-            opacity: githubOpacity,
-            transform: `translateY(${githubY}px)`,
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            marginBottom: 50,
-          }}
-        >
+        <div style={{ opacity: ghOpacity, transform: `translateY(${ghY}px)`, display: "flex", alignItems: "center", gap: 14, marginBottom: 44 }}>
           <div
             style={{
               background: "rgba(34,197,94,0.14)",
-              border: `2px solid rgba(34,197,94,0.38)`,
+              border: "2px solid rgba(34,197,94,0.38)",
               borderRadius: 16,
               paddingLeft: 22,
               paddingRight: 22,
@@ -261,196 +205,102 @@ const HookScene: React.FC = () => {
               paddingBottom: 10,
             }}
           >
-            <span
-              style={{
-                fontFamily: "system-ui, -apple-system, sans-serif",
-                fontWeight: 700,
-                fontSize: 52,
-                color: GREEN,
-                letterSpacing: -1,
-              }}
-            >
-              on GitHub
-            </span>
+            <span style={{ fontFamily: "system-ui", fontWeight: 700, fontSize: 48, color: GREEN }}>on GitHub</span>
           </div>
-          <span style={{ fontSize: 58 }}>🔥</span>
+          <span style={{ fontSize: 52 }}>🔥</span>
         </div>
 
-        {/* Counter */}
-        <div
-          style={{
-            opacity: countOpacity,
-            transform: `translateY(${countY}px)`,
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "center",
-              gap: 4,
-              marginBottom: 14,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "'Arial Black', Arial, system-ui, sans-serif",
-                fontWeight: 900,
-                fontSize: 88,
-                lineHeight: 1,
-                color: ORANGE,
-                textShadow: `0 0 20px rgba(249,115,22,0.4)`,
-              }}
-            >
-              47+
-            </span>
-            <span
-              style={{
-                fontFamily: "system-ui, -apple-system, sans-serif",
-                fontWeight: 700,
-                fontSize: 38,
-                color: WHITE,
-                marginLeft: 8,
-              }}
-            >
-              repos
-            </span>
-            {/* blinking cursor */}
-            <span
-              style={{
-                display: "inline-block",
-                width: 4,
-                height: 52,
-                background: ORANGE,
-                marginLeft: 4,
-                opacity: cursorBlink,
-                verticalAlign: "middle",
-                borderRadius: 2,
-              }}
-            />
-          </div>
-
-          {/* Subtext */}
-          <div style={{ opacity: subtextOpacity }}>
-            <span
-              style={{
-                fontFamily: "system-ui, -apple-system, sans-serif",
-                fontWeight: 500,
-                fontSize: 36,
-                lineHeight: 1.45,
-                color: MUTED,
-              }}
-            >
-              most devs have{" "}
-              <span style={{ color: WHITE, fontWeight: 800 }}>never heard of</span>
-            </span>
-          </div>
+        {/* Bottom text */}
+        <div style={{ opacity: bottomOpacity, transform: `translateY(${bottomY}px)`, textAlign: "center" }}>
+          <span style={{ fontFamily: "system-ui", fontWeight: 600, fontSize: 36, color: MUTED }}>
+            Here are the{" "}
+            <span style={{ color: ORANGE, fontWeight: 800 }}>top 5 repos</span>
+            {" "}you need
+          </span>
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 2: Repos List (frames 150-299 / 5 s) ──────────────────────────────
+// ─── Repo data (all verified public & free) ──────────────────────────────────
 
 const REPOS = [
-  { emoji: "🎬", name: "remotion-dev/skills", tag: "Video Creation", accent: PURPLE, bg: "rgba(168,85,247,0.11)", border: "rgba(168,85,247,0.28)" },
-  { emoji: "🤖", name: "anthropic-ai/cookbook", tag: "Prompts & Patterns", accent: ORANGE, bg: "rgba(249,115,22,0.11)", border: "rgba(249,115,22,0.28)" },
-  { emoji: "🌐", name: "browser-use/web-skills", tag: "Web Automation", accent: BLUE, bg: "rgba(59,130,246,0.11)", border: "rgba(59,130,246,0.28)" },
-  { emoji: "⚡", name: "vercel/ai-agent-toolkit", tag: "Deployment & CI/CD", accent: GREEN, bg: "rgba(34,197,94,0.11)", border: "rgba(34,197,94,0.28)" },
-  { emoji: "📊", name: "langchain-ai/skills", tag: "Data & Analysis", accent: "#f59e0b", bg: "rgba(245,158,11,0.11)", border: "rgba(245,158,11,0.28)" },
+  {
+    owner: "anthropics",
+    repo: "skills",
+    stars: "116k",
+    desc: "Official repository for Agent Skills — the standard for how AI agents learn new capabilities",
+    tags: ["official", "agent-skills", "SKILL.md"],
+    accent: ORANGE,
+    initial: "A",
+    files: ["skills/", "spec/", "template/", "README.md"],
+  },
+  {
+    owner: "vercel-labs",
+    repo: "skills",
+    stars: "14k",
+    desc: "The open agent skills CLI — discover, install & manage skills across 40+ agents",
+    tags: ["cli", "npx-skills", "ecosystem"],
+    accent: WHITE,
+    initial: "V",
+    files: ["src/", "skills/", "package.json", "README.md"],
+  },
+  {
+    owner: "remotion-dev",
+    repo: "skills",
+    stars: "2.7k",
+    desc: "Agent Skills for programmatic video creation in React with Remotion",
+    tags: ["video", "react", "remotion"],
+    accent: PURPLE,
+    initial: "R",
+    files: ["skills/remotion/", "src/", "README.md"],
+  },
+  {
+    owner: "levnikolaevich",
+    repo: "claude-code-skills",
+    stars: "387",
+    desc: "Plugin suite + MCP servers — Agile pipeline, docs gen, codebase audits & more",
+    tags: ["mcp-servers", "agile", "plugins"],
+    accent: GREEN,
+    initial: "L",
+    files: ["plugins/", "CLAUDE.md", "SKILL.md"],
+  },
+  {
+    owner: "glebis",
+    repo: "claude-skills",
+    stars: "105",
+    desc: "45+ curated skills — TDD, Google Workspace, productivity, knowledge maps",
+    tags: ["workflows", "tdd", "productivity"],
+    accent: BLUE,
+    initial: "G",
+    files: ["tdd/", "gws/", "vault-daydream/", "README.md"],
+  },
 ];
 
-const RepoCard: React.FC<{
-  repo: (typeof REPOS)[0];
-  index: number;
-  localFrame: number;
-  fps: number;
-}> = ({ repo, index, localFrame, fps }) => {
-  const delay = index * 13;
+// ─── Repo Scene (each is 60 frames = 2 s) ───────────────────────────────────
 
-  const cardSpring = spring({
-    frame: localFrame - delay,
-    fps,
-    config: { damping: 18, stiffness: 150 },
-    durationInFrames: 30,
-  });
-  const translateX = interpolate(cardSpring, [0, 1], [-180, 0]);
-  const opacity = interpolate(localFrame - delay, [0, 18], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  return (
-    <div
-      style={{
-        opacity,
-        transform: `translateX(${translateX}px)`,
-        background: repo.bg,
-        border: `1.5px solid ${repo.border}`,
-        borderRadius: 22,
-        paddingLeft: 26,
-        paddingRight: 26,
-        paddingTop: 20,
-        paddingBottom: 20,
-        marginBottom: 18,
-        display: "flex",
-        alignItems: "center",
-        gap: 22,
-      }}
-    >
-      <span style={{ fontSize: 46, flexShrink: 0, lineHeight: 1 }}>{repo.emoji}</span>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontFamily: "'Courier New', Courier, monospace",
-            fontWeight: 700,
-            fontSize: 28,
-            color: WHITE,
-            marginBottom: 5,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap" as const,
-          }}
-        >
-          {repo.name}
-        </div>
-        <div
-          style={{
-            fontFamily: "system-ui, -apple-system, sans-serif",
-            fontWeight: 600,
-            fontSize: 23,
-            color: repo.accent,
-          }}
-        >
-          {repo.tag}
-        </div>
-      </div>
-
-      {/* Live dot */}
-      <div
-        style={{
-          width: 10,
-          height: 10,
-          borderRadius: "50%",
-          background: repo.accent,
-          boxShadow: `0 0 10px ${repo.accent}`,
-          flexShrink: 0,
-        }}
-      />
-    </div>
-  );
-};
-
-const ReposScene: React.FC = () => {
+const RepoScene: React.FC<{ repoIndex: number }> = ({ repoIndex }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const repo = REPOS[repoIndex];
 
-  const headerSpring = spring({ frame, fps, config: { damping: 20, stiffness: 150 }, durationInFrames: 25 });
-  const headerY = interpolate(headerSpring, [0, 1], [-45, 0]);
-  const headerOpacity = interpolate(frame, [0, 18], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // Card enters
+  const cardSpring = spring({ frame, fps, config: { damping: 14, stiffness: 170 }, durationInFrames: 22 });
+  const cardScale = interpolate(cardSpring, [0, 1], [0.8, 1]);
+  const cardOpacity = interpolate(frame, [0, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+  // Star badge pops
+  const starSpring = spring({ frame: frame - 10, fps, config: { damping: 8, stiffness: 200 }, durationInFrames: 18 });
+  const starScale = interpolate(starSpring, [0, 1], [0.4, 1]);
+
+  // Tags + files stagger in
+  const detailsOpacity = interpolate(frame, [16, 28], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+  // Exit fade (last 6 frames)
+  const exitOpacity = interpolate(frame, [54, 60], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+  const totalOpacity = cardOpacity * exitOpacity;
 
   return (
     <AbsoluteFill
@@ -461,95 +311,233 @@ const ReposScene: React.FC = () => {
         paddingBottom: SAFE_BOTTOM,
         display: "flex",
         flexDirection: "column",
+        alignItems: "center",
         justifyContent: "center",
       }}
     >
-      {/* Header */}
+      {/* Counter badge */}
       <div
         style={{
-          opacity: headerOpacity,
-          transform: `translateY(${headerY}px)`,
-          textAlign: "center",
-          marginBottom: 38,
+          position: "absolute",
+          top: SAFE_TOP + 10,
+          right: SAFE_X + 10,
+          opacity: cardOpacity,
+          fontFamily: "system-ui, -apple-system, sans-serif",
+          fontWeight: 700,
+          fontSize: 28,
+          color: MUTED,
         }}
       >
-        <div
-          style={{
-            fontFamily: "system-ui, -apple-system, sans-serif",
-            fontWeight: 700,
-            fontSize: 30,
-            color: PURPLE_MID,
-            letterSpacing: 4,
-            textTransform: "uppercase" as const,
-            marginBottom: 14,
-          }}
-        >
-          Top Claude Code Skills
-        </div>
-        {/* Gradient divider */}
-        <div
-          style={{
-            width: 70,
-            height: 3,
-            background: `linear-gradient(90deg, ${PURPLE}, ${BLUE})`,
-            borderRadius: 2,
-            margin: "0 auto",
-          }}
-        />
+        {repoIndex + 1}/5
       </div>
 
-      {/* Cards */}
-      {REPOS.map((repo, i) => (
-        <RepoCard
-          key={repo.name}
-          repo={repo}
-          index={i}
-          localFrame={frame - 8}
-          fps={fps}
+      {/* GitHub-style mockup card */}
+      <div
+        style={{
+          opacity: totalOpacity,
+          transform: `scale(${cardScale})`,
+          width: "100%",
+          background: GH_DARK,
+          border: `2px solid ${repo.accent}40`,
+          borderRadius: 22,
+          overflow: "hidden",
+          boxShadow: `0 0 50px ${repo.accent}12, 0 10px 50px rgba(0,0,0,0.6)`,
+        }}
+      >
+        {/* Colored accent bar */}
+        <div
+          style={{
+            height: 5,
+            background: `linear-gradient(90deg, ${repo.accent}, ${repo.accent}80)`,
+          }}
         />
-      ))}
+
+        <div style={{ padding: 36 }}>
+          {/* Owner + Repo name row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 22 }}>
+            {/* Avatar circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                background: `${repo.accent}25`,
+                border: `2.5px solid ${repo.accent}55`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "system-ui",
+                fontWeight: 800,
+                fontSize: 26,
+                color: repo.accent,
+                flexShrink: 0,
+              }}
+            >
+              {repo.initial}
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 0, flexWrap: "wrap" as const }}>
+                <span
+                  style={{
+                    fontFamily: "system-ui",
+                    fontWeight: 500,
+                    fontSize: 26,
+                    color: MUTED,
+                  }}
+                >
+                  {repo.owner}
+                  <span style={{ color: `${MUTED}80` }}> / </span>
+                </span>
+                <span
+                  style={{
+                    fontFamily: "system-ui",
+                    fontWeight: 800,
+                    fontSize: 34,
+                    color: WHITE,
+                  }}
+                >
+                  {repo.repo}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Star badge */}
+          <div
+            style={{
+              transform: `scale(${starScale})`,
+              transformOrigin: "left center",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              background: "rgba(234,179,8,0.12)",
+              border: "1.5px solid rgba(234,179,8,0.32)",
+              borderRadius: 30,
+              paddingLeft: 18,
+              paddingRight: 18,
+              paddingTop: 9,
+              paddingBottom: 9,
+              marginBottom: 22,
+            }}
+          >
+            <span style={{ fontSize: 22, lineHeight: 1 }}>⭐</span>
+            <span
+              style={{
+                fontFamily: "system-ui",
+                fontWeight: 800,
+                fontSize: 30,
+                color: YELLOW,
+              }}
+            >
+              {repo.stars}
+            </span>
+          </div>
+
+          {/* Description */}
+          <div
+            style={{
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              fontWeight: 500,
+              fontSize: 30,
+              lineHeight: 1.45,
+              color: "#c9d1d9",
+              marginBottom: 24,
+            }}
+          >
+            {repo.desc}
+          </div>
+
+          {/* Topic tags */}
+          <div
+            style={{
+              opacity: detailsOpacity,
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap" as const,
+              marginBottom: 22,
+            }}
+          >
+            {repo.tags.map((tag) => (
+              <div
+                key={tag}
+                style={{
+                  background: `${repo.accent}15`,
+                  border: `1px solid ${repo.accent}30`,
+                  borderRadius: 20,
+                  paddingLeft: 14,
+                  paddingRight: 14,
+                  paddingTop: 6,
+                  paddingBottom: 6,
+                  fontFamily: "'Courier New', monospace",
+                  fontWeight: 600,
+                  fontSize: 20,
+                  color: repo.accent,
+                }}
+              >
+                {tag}
+              </div>
+            ))}
+          </div>
+
+          {/* Fake file tree */}
+          <div
+            style={{
+              opacity: detailsOpacity,
+              borderTop: `1px solid ${GH_BORDER}`,
+              paddingTop: 14,
+            }}
+          >
+            {repo.files.map((file) => (
+              <div
+                key={file}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingTop: 7,
+                  paddingBottom: 7,
+                  borderBottom: `1px solid ${GH_BORDER}50`,
+                }}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{file.endsWith("/") ? "📁" : "📄"}</span>
+                <span
+                  style={{
+                    fontFamily: "'Courier New', monospace",
+                    fontSize: 22,
+                    color: "#58a6ff",
+                  }}
+                >
+                  {file}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 3: CTA (frames 300-449 / 5 s) ─────────────────────────────────────
-
-const CMD = "npx skills add remotion-dev/skills";
+// ─── CTA Scene (2 s = 60 frames) ────────────────────────────────────────────
 
 const CTAScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
   // Title
-  const titleSpring = spring({ frame, fps, config: { damping: 20, stiffness: 150 }, durationInFrames: 25 });
-  const titleY = interpolate(titleSpring, [0, 1], [-40, 0]);
-  const titleOpacity = interpolate(frame, [0, 18], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const titleSpring = spring({ frame, fps, config: { damping: 18, stiffness: 160 }, durationInFrames: 22 });
+  const titleY = interpolate(titleSpring, [0, 1], [-35, 0]);
+  const titleOpacity = interpolate(frame, [0, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  // Terminal box
-  const termSpring = spring({ frame: frame - 18, fps, config: { damping: 16, stiffness: 130 }, durationInFrames: 28 });
-  const termScale = interpolate(termSpring, [0, 1], [0.82, 1]);
-  const termOpacity = interpolate(frame - 18, [0, 18], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  // Typewriter command
-  const TYPER_START = 40;
-  const TYPER_DURATION = 58;
-  const charCount = Math.floor(
-    interpolate(frame - TYPER_START, [0, TYPER_DURATION], [0, CMD.length], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-    })
-  );
-  const typedCmd = CMD.slice(0, charCount);
-  const showCursor = frame >= TYPER_START && frame < TYPER_START + TYPER_DURATION + 28;
-  const cursorOn = Math.floor(frame / 14) % 2 === 0;
-
-  // CTA button
-  const ctaOpacity = interpolate(frame, [95, 114], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const ctaY = interpolate(frame, [95, 118], [22, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const btnPulse = 1 + interpolate(Math.sin(frame * 0.18), [-1, 1], [0, 0.038]);
+  // BLDTATO brand
+  const brandSpring = spring({ frame: frame - 10, fps, config: { damping: 8, stiffness: 180 }, durationInFrames: 24 });
+  const brandScale = interpolate(brandSpring, [0, 1], [0.5, 1]);
+  const brandPulse = 1 + interpolate(Math.sin(frame * 0.2), [-1, 1], [0, 0.04]);
 
   // Subtext
-  const subOpacity = interpolate(frame, [115, 132], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const subOpacity = interpolate(frame, [28, 42], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const subY = interpolate(frame, [28, 42], [15, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill
@@ -564,194 +552,105 @@ const CTAScene: React.FC = () => {
         justifyContent: "center",
       }}
     >
-      {/* Title */}
+      {/* "Sign Up for" */}
       <div
         style={{
           opacity: titleOpacity,
           transform: `translateY(${titleY}px)`,
           textAlign: "center",
-          marginBottom: 44,
+          marginBottom: 16,
         }}
       >
-        <div
+        <span
           style={{
             fontFamily: "system-ui, -apple-system, sans-serif",
-            fontWeight: 800,
-            fontSize: 50,
+            fontWeight: 700,
+            fontSize: 52,
             color: WHITE,
-            lineHeight: 1.25,
-            marginBottom: 6,
           }}
         >
-          Install any skill in
-        </div>
-        <div
+          Sign Up for
+        </span>
+      </div>
+
+      {/* BLDTATO */}
+      <div
+        style={{
+          transform: `scale(${brandScale * brandPulse})`,
+          marginBottom: 36,
+        }}
+      >
+        <span
           style={{
             fontFamily: "'Arial Black', Arial, system-ui, sans-serif",
             fontWeight: 900,
-            fontSize: 68,
+            fontSize: 130,
+            lineHeight: 1,
+            letterSpacing: -3,
             color: ORANGE,
-            lineHeight: 1.15,
-            textShadow: `0 0 24px rgba(249,115,22,0.45)`,
+            textShadow: `0 0 30px rgba(249,115,22,0.7), 0 0 80px rgba(249,115,22,0.25)`,
           }}
         >
-          1 command ⚡
-        </div>
+          BLDTATO
+        </span>
       </div>
 
-      {/* Terminal */}
+      {/* Accent line */}
       <div
         style={{
-          opacity: termOpacity,
-          transform: `scale(${termScale})`,
-          width: "100%",
-          background: "#0d1117",
-          border: `1.5px solid rgba(34,197,94,0.28)`,
-          borderRadius: 22,
-          overflow: "hidden",
-          marginBottom: 50,
-          boxShadow: "0 0 40px rgba(34,197,94,0.07), 0 8px 40px rgba(0,0,0,0.5)",
+          opacity: subOpacity,
+          width: 120,
+          height: 4,
+          background: `linear-gradient(90deg, ${PURPLE}, ${ORANGE})`,
+          borderRadius: 2,
+          marginBottom: 32,
+        }}
+      />
+
+      {/* Subtext */}
+      <div
+        style={{
+          opacity: subOpacity,
+          transform: `translateY(${subY}px)`,
+          textAlign: "center",
         }}
       >
-        {/* Window chrome */}
-        <div
+        <span
           style={{
-            background: "#161b22",
-            paddingLeft: 24,
-            paddingRight: 24,
-            paddingTop: 16,
-            paddingBottom: 16,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            fontWeight: 600,
+            fontSize: 36,
+            color: MUTED,
+            lineHeight: 1.5,
           }}
         >
-          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#ff5f57" }} />
-          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#ffbd2e" }} />
-          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#28c840" }} />
-          <span
-            style={{
-              marginLeft: 14,
-              fontFamily: "'Courier New', Courier, monospace",
-              fontSize: 22,
-              color: "rgba(255,255,255,0.35)",
-            }}
-          >
-            bash
-          </span>
-        </div>
-
-        {/* Command */}
-        <div style={{ paddingLeft: 30, paddingRight: 30, paddingTop: 30, paddingBottom: 30 }}>
-          <span
-            style={{
-              fontFamily: "'Courier New', Courier, monospace",
-              fontWeight: 700,
-              fontSize: 31,
-              color: "rgba(255,255,255,0.28)",
-            }}
-          >
-            ${" "}
-          </span>
-          <span
-            style={{
-              fontFamily: "'Courier New', Courier, monospace",
-              fontWeight: 700,
-              fontSize: 31,
-              color: GREEN,
-              wordBreak: "break-all" as const,
-            }}
-          >
-            {typedCmd}
-          </span>
-          {showCursor && cursorOn && (
-            <span
-              style={{
-                display: "inline-block",
-                width: 3,
-                height: "1em",
-                background: GREEN,
-                marginLeft: 3,
-                verticalAlign: "text-bottom",
-                borderRadius: 1,
-              }}
-            />
-          )}
-        </div>
+          Get all these skills{"\n"}
+          <span style={{ color: WHITE, fontWeight: 800 }}>& so much more</span>
+        </span>
       </div>
 
-      {/* Follow button */}
+      {/* Arrow / pointer */}
       <div
         style={{
-          opacity: ctaOpacity,
-          transform: `translateY(${ctaY}px)`,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 24,
+          opacity: subOpacity,
+          marginTop: 40,
+          fontSize: 48,
         }}
       >
-        <div
-          style={{
-            transform: `scale(${btnPulse})`,
-            background: `linear-gradient(135deg, ${PURPLE} 0%, ${BLUE} 100%)`,
-            borderRadius: 60,
-            paddingLeft: 52,
-            paddingRight: 52,
-            paddingTop: 24,
-            paddingBottom: 24,
-            boxShadow: `0 0 32px rgba(168,85,247,0.38), 0 0 64px rgba(168,85,247,0.14)`,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "system-ui, -apple-system, sans-serif",
-              fontWeight: 800,
-              fontSize: 36,
-              color: WHITE,
-              letterSpacing: 0.3,
-            }}
-          >
-            ✨ Follow for more AI tips
-          </span>
-        </div>
-
-        <div style={{ opacity: subOpacity }}>
-          <span
-            style={{
-              fontFamily: "system-ui, -apple-system, sans-serif",
-              fontWeight: 500,
-              fontSize: 30,
-              color: MUTED,
-            }}
-          >
-            🔗 Link in bio for all repos
-          </span>
-        </div>
+        👇
       </div>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene Wipe Transition ────────────────────────────────────────────────────
+// ─── Wipe transition ─────────────────────────────────────────────────────────
 
 const Wipe: React.FC = () => {
   const frame = useCurrentFrame();
-
-  // Slide in from left (0→8), slide out to right (8→18)
   const x =
     frame <= 9
-      ? interpolate(frame, [0, 9], [-W, 0], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.out(Easing.quad),
-        })
-      : interpolate(frame, [9, 18], [0, W], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.in(Easing.quad),
-        });
+      ? interpolate(frame, [0, 9], [-W, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.quad) })
+      : interpolate(frame, [9, 18], [0, W], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.quad) });
 
   return (
     <AbsoluteFill
@@ -763,44 +662,65 @@ const Wipe: React.FC = () => {
   );
 };
 
-// ─── Root composition ─────────────────────────────────────────────────────────
+// ─── Main Composition ────────────────────────────────────────────────────────
 
 export const ClaudeSkillsVideo: React.FC = () => {
   const { fps } = useVideoConfig();
 
-  // Scene lengths
-  const HOOK = 150; // 5 s
-  const REPOS = 150; // 5 s
-  const CTA = 150; // 5 s
+  // Timeline (frames)
+  const HOOK = 90; // 3 s
+  const REPO_DUR = 60; // 2 s each
+  const CTA_DUR = 60; // 2 s
+  // Total: 90 + 60*5 + 60 = 450 frames = 15 s
 
-  // Wipe sits 9 frames before each cut, lasts 18 frames
   const WIPE_OFFSET = 9;
   const WIPE_DUR = 18;
 
+  const repo1Start = HOOK;
+  const repo2Start = repo1Start + REPO_DUR;
+  const repo3Start = repo2Start + REPO_DUR;
+  const repo4Start = repo3Start + REPO_DUR;
+  const repo5Start = repo4Start + REPO_DUR;
+  const ctaStart = repo5Start + REPO_DUR;
+
   return (
     <AbsoluteFill>
-      {/* Always-on background */}
       <Background />
 
-      {/* ── Scenes ── */}
+      {/* Hook */}
       <Sequence from={0} durationInFrames={HOOK} premountFor={fps}>
         <HookScene />
       </Sequence>
 
-      <Sequence from={HOOK} durationInFrames={REPOS} premountFor={fps}>
-        <ReposScene />
+      {/* 5 repo scenes */}
+      <Sequence from={repo1Start} durationInFrames={REPO_DUR} premountFor={fps}>
+        <RepoScene repoIndex={0} />
+      </Sequence>
+      <Sequence from={repo2Start} durationInFrames={REPO_DUR} premountFor={fps}>
+        <RepoScene repoIndex={1} />
+      </Sequence>
+      <Sequence from={repo3Start} durationInFrames={REPO_DUR} premountFor={fps}>
+        <RepoScene repoIndex={2} />
+      </Sequence>
+      <Sequence from={repo4Start} durationInFrames={REPO_DUR} premountFor={fps}>
+        <RepoScene repoIndex={3} />
+      </Sequence>
+      <Sequence from={repo5Start} durationInFrames={REPO_DUR} premountFor={fps}>
+        <RepoScene repoIndex={4} />
       </Sequence>
 
-      <Sequence from={HOOK + REPOS} durationInFrames={CTA} premountFor={fps}>
+      {/* CTA */}
+      <Sequence from={ctaStart} durationInFrames={CTA_DUR} premountFor={fps}>
         <CTAScene />
       </Sequence>
 
-      {/* ── Transitions ── */}
+      {/* Wipe: Hook → Repo 1 */}
       <Sequence from={HOOK - WIPE_OFFSET} durationInFrames={WIPE_DUR} premountFor={WIPE_OFFSET}>
         <Wipe />
       </Sequence>
 
-      <Sequence from={HOOK + REPOS - WIPE_OFFSET} durationInFrames={WIPE_DUR} premountFor={WIPE_OFFSET}>
+      {/* Wipe: Repo 5 → CTA */}
+      <Sequence from={ctaStart - WIPE_OFFSET} durationInFrames={WIPE_DUR} premountFor={WIPE_OFFSET}>
         <Wipe />
       </Sequence>
     </AbsoluteFill>
